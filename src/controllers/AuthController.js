@@ -1,54 +1,62 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import User from '../models/User.js';
+import Usuario from '../models/Usuario.js';
+import { v4 as uuidv4 } from 'uuid'; // Necesitarás esto si tu DB no genera UUIDs automáticamente
 
 class AuthController {
   static async register(req, res) {
     try {
+      // 1. Recibir datos (usamos 'nombre' para coincidir con tu DB, o lo mapeamos abajo)
       const { name, email, password } = req.body;
 
       if (!name || !email || !password) {
-        return res.status(400).json({ message: 'Faltan campos requeridos' });
+        return res.status(400).json({ message: 'Faltan campos requeridos: name, email, password' });
       }
 
-      // Verificar si el usuario ya existe
-      const existingUser = await User.findByEmail(email);
+      // 2. Verificar si el usuario ya existe
+      // Nota: Objection usa .query().findOne()
+      const existingUser = await Usuario.query().findOne({ email }); 
+      
       if (existingUser) {
         return res.status(400).json({ message: 'El usuario ya existe' });
       }
 
-      // Hash password
+      // 3. Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // Crear usuario
-      const [newUser] = await User.query()
+      // 4. Crear usuario
+      // IMPORTANTE: Mapeamos 'name' a 'nombre' que es como se llama tu columna en Supabase
+      const newUser = await Usuario.query()
         .insert({
-          name,
-          email,
-          password: hashedPassword,
+          user_id: uuidv4(), // Generamos ID manualmente si la DB no tiene "default gen_random_uuid()"
+          nombre: name,
+          email: email,      // Tu tabla necesita esta columna
+          password: hashedPassword, // Tu tabla necesita esta columna
+          moneda: 'CLP',     // Valor por defecto
+          activo: true
         })
-        .returning('*');
+        .returning('*'); // Para Postgres devuelve el objeto creado
 
-      // Generar token
+      // 5. Generar token
       const token = jwt.sign(
-        { id: newUser.id, email: newUser.email },
+        { id: newUser.user_id, email: newUser.email }, // Usamos user_id
         process.env.JWT_SECRET || 'secret_key',
         { expiresIn: '1h' },
       );
 
-      // No devolver el password
-      delete newUser.password;
+      // No devolver el password en la respuesta
+      const usuarioResponse = { ...newUser };
+      delete usuarioResponse.password;
 
       res.status(201).json({
         message: 'Usuario registrado exitosamente',
-        user: newUser,
+        user: usuarioResponse,
         token,
       });
+
     } catch (error) {
       console.error(error);
-      res
-        .status(500)
-        .json({ message: 'Error al registrar usuario', error: error.message });
+      res.status(500).json({ message: 'Error al registrar usuario', error: error.message });
     }
   }
 
@@ -57,46 +65,46 @@ class AuthController {
       const { email, password } = req.body;
 
       if (!email || !password) {
-        return res
-          .status(400)
-          .json({ message: 'Email y password son requeridos' });
+        return res.status(400).json({ message: 'Email y password son requeridos' });
       }
 
-      // Buscar usuario
-      const user = await User.findByEmail(email);
+      // 1. Buscar usuario por email
+      const user = await Usuario.query().findOne({ email });
+      
       if (!user) {
         return res.status(401).json({ message: 'Credenciales inválidas' });
       }
 
-      // Verificar password
+      // 2. Verificar password
       const isMatch = await bcrypt.compare(password, user.password);
       if (!isMatch) {
         return res.status(401).json({ message: 'Credenciales inválidas' });
       }
 
-      // Generar token
+      // 3. Generar token
       const token = jwt.sign(
-        { id: user.id, email: user.email },
+        { id: user.user_id, email: user.email }, // Usamos user_id
         process.env.JWT_SECRET || 'secret_key',
         { expiresIn: '1h' },
       );
 
       res.status(200).json({
         message: 'Login exitoso',
-        user: { id: user.id, name: user.name, email: user.email },
+        user: { 
+            id: user.user_id, 
+            nombre: user.nombre, 
+            email: user.email 
+        },
         token,
       });
+
     } catch (error) {
       console.error(error);
-      res
-        .status(500)
-        .json({ message: 'Error al iniciar sesión', error: error.message });
+      res.status(500).json({ message: 'Error al iniciar sesión', error: error.message });
     }
   }
 
   static async getProfile(req, res) {
-    // El usuario ya viene en req.user gracias al middleware
-    // Podemos buscar datos frescos en la DB si es necesario, o retornar lo del token
     res.json({ message: 'Perfil de usuario protegido', user: req.user });
   }
 }

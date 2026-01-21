@@ -8,11 +8,6 @@ import { Router } from 'express';
 import AuthController from '../controllers/AuthController.js';
 import { authenticateToken } from '../middlewares/authMiddleware.js';
 
-// Artículos (extras)
-import ArticleController from '../controllers/ArticleController.js';
-import OpenRouterService from '../services/OpenRouter.js';
-import Article from '../models/Article.js';
-
 // Usuarios
 import {
   index as usuarioIndex,
@@ -49,7 +44,7 @@ import {
   destroy as metaDestroy,
 } from '../controllers/MetaAhorroController.js';
 
-// movimientos de ahorro 
+// Movimientos de ahorro 
 import {
   index as movIndex,
   show as movShow,
@@ -58,8 +53,7 @@ import {
   destroy as movDestroy,
 } from '../controllers/MovimientoAhorroController.js';
 
-// chat mensajes 
-
+// Chat mensajes 
 import {
   index as chatIndex,
   show as chatShow,
@@ -67,7 +61,7 @@ import {
   destroy as chatDestroy,
 } from '../controllers/ChatMensajeController.js';
 
-// consejo financiero
+// Consejo financiero
 import {
   index as consejoIndex,
   show as consejoShow,
@@ -84,37 +78,9 @@ router.post('/login', AuthController.login);
 router.post('/register', AuthController.register);
 router.get('/profile', authenticateToken, AuthController.getProfile);
 
-/**
- * ARTÍCULOS (CRUD + IA) - opcional
- */
-router.get('/articles', ArticleController.index);
-router.get('/articles/:id', ArticleController.show);
-router.post('/articles', ArticleController.store);
-router.put('/articles/:id', ArticleController.update);
-router.delete('/articles/:id', ArticleController.destroy);
 
-router.post('/articles/:id/summarize', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const article = await Article.find(id);
+// --- SECCIÓN ELIMINADA: Rutas de Artículos ---
 
-    if (!article) {
-      return res.status(404).json({ error: 'Artículo no encontrado' });
-    }
-    if (!article.content) {
-      return res
-        .status(400)
-        .json({ error: 'El artículo no tiene contenido para resumir' });
-    }
-
-    const summary = await OpenRouterService.generateSummary(article.content);
-    res.json({ original_id: article.id, summary });
-
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Error generando el resumen' });
-  }
-});
 
 /**
  * USUARIOS
