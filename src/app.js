@@ -1,26 +1,25 @@
-/**
- * Archivo Principal de la Aplicación (Entry Point)
- *
- * Configura el servidor Express, middlewares y rutas.
- */
-
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import 'dotenv/config'; // Carga variables de entorno automáticamente
+import { Model } from 'objection'; // <--- IMPORTANTE: Importar Model
+import 'dotenv/config'; 
 
+import db from './config/db.js';     // <--- IMPORTANTE: Importar la conexión
 import router from './routes/router.js';
+
+// --- CONECTAR OBJECTION A LA BASE DE DATOS ---
+Model.knex(db); // <--- Configurar Objection para usar la conexión de Knex
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middlewares
-app.use(cors()); // Permite peticiones desde otros dominios
-app.use(morgan('dev')); // Loguea las peticiones HTTP en consola
-app.use(express.json()); // Parsea body JSON
+app.use(cors()); 
+app.use(morgan('dev')); 
+app.use(express.json()); 
 
 // Rutas
-app.use('/api', router);
+app.use('/api', router); // Ojo: Tus rutas empiezan con /api
 
 // Iniciar servidor
 app.listen(PORT, () => {

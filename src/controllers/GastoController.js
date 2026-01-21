@@ -37,11 +37,18 @@ export const show = async (req, res) => {
 
 export const store = async (req, res) => {
   try {
+    // 1. Obtenemos los datos del cuerpo de la petición
     const data = req.body;
+
+    // 2. ¡MAGIA! Asignamos el ID del usuario logueado automáticamente
+    // (req.user viene del token gracias a tu middleware de seguridad)
+    if (req.user && req.user.id) {
+        data.user_id = req.user.id;
+    }
 
     // Validación mínima
     if (!data.user_id || !data.monto || !data.fecha) {
-      return res.status(400).json({ message: 'Faltan campos obligatorios' });
+      return res.status(400).json({ message: 'Faltan campos obligatorios (user_id, monto o fecha)' });
     }
 
     const newGasto = await Gasto.create(data);

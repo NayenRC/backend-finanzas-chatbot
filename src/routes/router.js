@@ -94,11 +94,11 @@ router.delete('/usuarios/:id', usuarioDestroy);
 /**
  * GASTOS
  */
-router.get('/gastos', gastoIndex);
-router.get('/gastos/:id', gastoShow);
-router.post('/gastos', gastoStore);
-router.put('/gastos/:id', gastoUpdate);
-router.delete('/gastos/:id', gastoDestroy);
+router.get('/gastos', authenticateToken, gastoIndex); // Recomendado proteger también la lectura
+router.get('/gastos/:id', authenticateToken, gastoShow);
+router.post('/gastos', authenticateToken, gastoStore); // <--- ¡AQUÍ ESTÁ LA CLAVE!
+router.put('/gastos/:id', authenticateToken, gastoUpdate);
+router.delete('/gastos/:id', authenticateToken, gastoDestroy);
 
 // filtrar gastos por usuario
 router.get('/usuarios/:userId/gastos', gastoIndex);
