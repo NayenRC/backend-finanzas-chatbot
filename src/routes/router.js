@@ -145,7 +145,7 @@ router.get('/metas/:metaId/movimientos', movIndex);
  */
 router.get('/mensajes', chatIndex);
 router.get('/mensajes/:id', chatShow);
-router.post('/mensajes', chatStore);
+router.post('/mensajes', authenticateToken, chatStore);
 router.delete('/mensajes/:id', chatDestroy);
 
 // Filtrar mensajes de un usuario
