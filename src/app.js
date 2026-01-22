@@ -4,26 +4,61 @@
  * Configura el servidor Express, middlewares y rutas.
  */
 
+import 'dotenv/config';
+import './bot/telegramBot.js'; 
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import 'dotenv/config'; // Carga variables de entorno automáticamente
-
 import router from './routes/router.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// =====================
 // Middlewares
-app.use(cors()); // Permite peticiones desde otros dominios
-app.use(morgan('dev')); // Loguea las peticiones HTTP en consola
-app.use(express.json()); // Parsea body JSON
+// =====================
+app.use(cors());
+app.use(morgan('dev'));
+app.use(express.json());
 
-// Rutas
+// =====================
+// RUTA RAÍZ (IMPORTANTE)
+// =====================
+app.get('/', (req, res) => {
+  res.json({
+    message: 'SmartFin Backend activo 🚀',
+    status: 'OK'
+  });
+});
+
+// =====================
+// HEALTH CHECK
+// =====================
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    message: 'Backend funcionando correctamente'
+  });
+});
+
+// =====================
+// Rutas API
+// =====================
 app.use('/api', router);
 
-// Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`Ambiente: ${process.env.NODE_ENV || 'development'}`);
+// =====================
+// 404 GLOBAL
+// =====================
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Ruta no encontrada'
+  });
 });
+
+// =====================
+// Iniciar servidor
+// =====================
+app.listen(3000, () => {
+  console.log('🚀 Servidor corriendo en http://localhost:3000');
+});
+
