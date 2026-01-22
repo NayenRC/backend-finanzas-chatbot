@@ -10,6 +10,8 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import router from './routes/router.js';
+import telegramRoutes from './routes/telegram.routes.js';
+import finanzasRoutes from './routes/finanzas.routes.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -47,13 +49,10 @@ app.get('/health', (req, res) => {
 app.use('/api', router);
 
 // =====================
-// 404 GLOBAL
+// Import
 // =====================
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Ruta no encontrada'
-  });
-});
+app.use(telegramRoutes);
+app.use(finanzasRoutes);
 
 // =====================
 // Iniciar servidor
