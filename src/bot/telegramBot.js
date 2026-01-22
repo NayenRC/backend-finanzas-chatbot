@@ -2,6 +2,8 @@ import 'dotenv/config';
 import TelegramBot from 'node-telegram-bot-api';
 import axios from 'axios';
 
+const API = process.env.API_URL || 'http://localhost:3000/api';
+
 
 // 🔐 Validaciones duras
 if (!process.env.TELEGRAM_BOT_TOKEN) {
@@ -129,10 +131,5 @@ bot.onText(/\/ingreso (\d+) (.+)/, async (msg, match) => {
     console.error('❌ ERROR INGRESO:', error.response?.data || error.message);
     bot.sendMessage(chatId, '❌ Error al registrar ingreso');
   }
-});
-axios.post(`${API}/telegram/login`, {
-    telegram_id: msg.from.id,
-    username: msg.from.username,
-    nombre: msg.from.first_name,
 });
 
