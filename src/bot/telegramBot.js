@@ -133,3 +133,44 @@ bot.onText(/\/ingreso (\d+) (.+)/, async (msg, match) => {
   }
 });
 
+/**
+ * AI CHAT HANDLER (Mensajes de texto normales)
+ */
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text;
+
+  // Ignorar comandos que empiezan con '/'
+  if (!text || text.startsWith('/')) {
+    return;
+  }
+
+  const token = sessions.get(chatId);
+
+  if (!token) {
+    return bot.sendMessage(chatId, '⚠️ Por favor inicia sesión primero con /start');
+  }
+
+  // Notificar que el bot está "escribiendo..."
+  bot.sendChatAction(chatId, 'typing');
+
+  try {
+    const res = await api.post(
+      '/telegram/chat',
+      { mensaje: text },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    const { response, intent } = res.data;
+
+    // Responder al usuario con la respuesta de la IA
+    bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
+
+  } catch (error) {
+    console.error('❌ ERROR AI CHAT:', error.response?.data || error.message);
+    bot.sendMessage(chatId, '❌ Lo siento, tuve un problema procesando tu mensaje.');
+  }
+});
+

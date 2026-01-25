@@ -5,7 +5,7 @@
  */
 
 import 'dotenv/config';
-import './bot/telegramBot.js'; 
+//import './bot/telegramBot.js'; 
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
