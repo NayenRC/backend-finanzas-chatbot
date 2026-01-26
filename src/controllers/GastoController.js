@@ -4,6 +4,8 @@ export const index = async (req, res) => {
   try {
     // Si viene userId como parámetro, filtra por usuario
     const { userId } = req.params;
+    const { monto, descripcion } = req.body;
+
 
     if (userId) {
       const gastosPorUsuario = await Gasto.findByUser(userId);

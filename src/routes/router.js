@@ -4,13 +4,16 @@
 
 import { Router } from 'express';
 
-// Auth
+// 🔐 Auth normal
 import AuthController from '../controllers/AuthController.js';
 import { authenticateToken } from '../middlewares/authMiddleware.js';
 // Dashboard
 import { getDashboardSummary } from "../controllers/DashboardController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 
+
+// 🤖 Auth Telegram
+import TelegramAuthController from '../controllers/TelegramAuthController.js';
 
 // Usuarios
 import {
@@ -48,7 +51,7 @@ import {
   destroy as metaDestroy,
 } from '../controllers/MetaAhorroController.js';
 
-// Movimientos de ahorro 
+// Movimientos de ahorro
 import {
   index as movIndex,
   show as movShow,
@@ -57,7 +60,7 @@ import {
   destroy as movDestroy,
 } from '../controllers/MovimientoAhorroController.js';
 
-// Chat mensajes 
+// Chat mensajes
 import {
   index as chatIndex,
   show as chatShow,
@@ -65,7 +68,7 @@ import {
   destroy as chatDestroy,
 } from '../controllers/ChatMensajeController.js';
 
-// Consejo financiero
+// Consejos financieros
 import {
   index as consejoIndex,
   show as consejoShow,
@@ -76,18 +79,19 @@ import {
 const router = Router();
 
 /**
- * AUTENTICACIÓN
+ * 🔐 AUTENTICACIÓN NORMAL (WEB / FRONT)
  */
 router.post('/login', AuthController.login);
 router.post('/register', AuthController.register);
 router.get('/profile', authenticateToken, AuthController.getProfile);
 
-
-// --- SECCIÓN ELIMINADA: Rutas de Artículos ---
-
+/**
+ * 🤖 AUTENTICACIÓN TELEGRAM
+ */
+router.post('/telegram/login', TelegramAuthController.login);
 
 /**
- * USUARIOS
+ * 👤 USUARIOS
  */
 router.get('/usuarios', usuarioIndex);
 router.get('/usuarios/:id', usuarioShow);
@@ -96,56 +100,51 @@ router.put('/usuarios/:id', usuarioUpdate);
 router.delete('/usuarios/:id', usuarioDestroy);
 
 /**
- * GASTOS
+ * 💸 GASTOS
  */
-router.get('/gastos', authenticateToken, gastoIndex); // Recomendado proteger también la lectura
+router.get('/gastos', authenticateToken, gastoIndex);
 router.get('/gastos/:id', authenticateToken, gastoShow);
-router.post('/gastos', authenticateToken, gastoStore); // <--- ¡AQUÍ ESTÁ LA CLAVE!
+router.post('/gastos', authenticateToken, gastoStore);
 router.put('/gastos/:id', authenticateToken, gastoUpdate);
 router.delete('/gastos/:id', authenticateToken, gastoDestroy);
 
-// filtrar gastos por usuario
-router.get('/usuarios/:userId/gastos', gastoIndex);
+router.get('/usuarios/:userId/gastos', authenticateToken, gastoIndex);
 
 /**
- * INGRESOS
+ * 💰 INGRESOS
  */
-router.get('/ingresos', ingresoIndex);
-router.get('/ingresos/:id', ingresoShow);
-router.post('/ingresos', ingresoStore);
-router.put('/ingresos/:id', ingresoUpdate);
-router.delete('/ingresos/:id', ingresoDestroy);
+router.get('/ingresos', authenticateToken, ingresoIndex);
+router.get('/ingresos/:id', authenticateToken, ingresoShow);
+router.post('/ingresos', authenticateToken, ingresoStore);
+router.put('/ingresos/:id', authenticateToken, ingresoUpdate);
+router.delete('/ingresos/:id', authenticateToken, ingresoDestroy);
 
-// filtrar ingresos por usuario
-router.get('/usuarios/:userId/ingresos', ingresoIndex);
+router.get('/usuarios/:userId/ingresos', authenticateToken, ingresoIndex);
 
 /**
- * METAS DE AHORRO
+ * 🎯 METAS DE AHORRO
  */
-router.get('/metas', metaIndex);
-router.get('/metas/:id', metaShow);
-router.post('/metas', metaStore);
-router.put('/metas/:id', metaUpdate);
-router.delete('/metas/:id', metaDestroy);
+router.get('/metas', authenticateToken, metaIndex);
+router.get('/metas/:id', authenticateToken, metaShow);
+router.post('/metas', authenticateToken, metaStore);
+router.put('/metas/:id', authenticateToken, metaUpdate);
+router.delete('/metas/:id', authenticateToken, metaDestroy);
 
-// filtrar metas por usuario
-router.get('/usuarios/:userId/metas', metaIndex);
+router.get('/usuarios/:userId/metas', authenticateToken, metaIndex);
 
 /**
- * MOVIMIENTOS DE AHORRO
+ * 🔁 MOVIMIENTOS DE AHORRO
  */
-router.get('/movimientos', movIndex);
-router.get('/movimientos/:id', movShow);
-router.post('/movimientos', movStore);
-router.put('/movimientos/:id', movUpdate);
-router.delete('/movimientos/:id', movDestroy);
+router.get('/movimientos', authenticateToken, movIndex);
+router.get('/movimientos/:id', authenticateToken, movShow);
+router.post('/movimientos', authenticateToken, movStore);
+router.put('/movimientos/:id', authenticateToken, movUpdate);
+router.delete('/movimientos/:id', authenticateToken, movDestroy);
 
-// Movimientos filtrados por meta
-router.get('/metas/:metaId/movimientos', movIndex);
-
+router.get('/metas/:metaId/movimientos', authenticateToken, movIndex);
 
 /**
- * Mensajes de Chat
+ * 💬 CHAT
  */
 router.get('/mensajes', chatIndex);
 router.get('/mensajes/:id', chatShow);
@@ -155,17 +154,17 @@ router.delete('/mensajes/:id', chatDestroy);
 // Filtrar mensajes de un usuario
 router.get('/usuarios/:userId/mensajes', chatIndex);
 
+router.get('/usuarios/:userId/mensajes', authenticateToken, chatIndex);
 
 /**
- * Consejos Financieros
+ * 💡 CONSEJOS FINANCIEROS
  */
-router.get('/consejos', consejoIndex);
-router.get('/consejos/:id', consejoShow);
-router.post('/consejos', consejoStore);
-router.delete('/consejos/:id', consejoDestroy);
+router.get('/consejos', authenticateToken, consejoIndex);
+router.get('/consejos/:id', authenticateToken, consejoShow);
+router.post('/consejos', authenticateToken, consejoStore);
+router.delete('/consejos/:id', authenticateToken, consejoDestroy);
 
-// Consejos filtrados por usuario
-router.get('/usuarios/:userId/consejos', consejoIndex);
+router.get('/usuarios/:userId/consejos', authenticateToken, consejoIndex);
 
 // Dashboard Summary
 router.get(
@@ -175,10 +174,13 @@ router.get(
 );
 
 /**
- * RUTA BASE
+ * 🏠 RUTA BASE
  */
 router.get('/', (req, res) => {
-  res.json({ message: 'Bienvenido a la API Finanzas Chatbot' });
+  res.json({
+    message: 'SmartFin Backend activo 🚀',
+    status: 'OK',
+  });
 });
 
 export default router;
