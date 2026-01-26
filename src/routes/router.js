@@ -2,15 +2,14 @@
  * Definición de Rutas - API de Finanzas
  */
 
-import { Router } from 'express';
+import { Router } from "express";
 
 // Auth
-import AuthController from '../controllers/AuthController.js';
-import { authenticateToken } from '../middlewares/authMiddleware.js';
+import AuthController from "../controllers/AuthController.js";
+import { authenticateToken } from "../middlewares/authMiddleware.js";
+
 // Dashboard
 import { getDashboardSummary } from "../controllers/DashboardController.js";
-import authMiddleware from "../middlewares/authMiddleware.js";
-
 
 // Usuarios
 import {
@@ -19,7 +18,7 @@ import {
   store as usuarioStore,
   update as usuarioUpdate,
   destroy as usuarioDestroy,
-} from '../controllers/UsuarioController.js';
+} from "../controllers/UsuarioController.js";
 
 // Gastos
 import {
@@ -28,7 +27,7 @@ import {
   store as gastoStore,
   update as gastoUpdate,
   destroy as gastoDestroy,
-} from '../controllers/GastoController.js';
+} from "../controllers/GastoController.js";
 
 // Ingresos
 import {
@@ -37,7 +36,7 @@ import {
   store as ingresoStore,
   update as ingresoUpdate,
   destroy as ingresoDestroy,
-} from '../controllers/IngresoController.js';
+} from "../controllers/IngresoController.js";
 
 // Metas de Ahorro
 import {
@@ -46,24 +45,24 @@ import {
   store as metaStore,
   update as metaUpdate,
   destroy as metaDestroy,
-} from '../controllers/MetaAhorroController.js';
+} from "../controllers/MetaAhorroController.js";
 
-// Movimientos de ahorro 
+// Movimientos de ahorro
 import {
   index as movIndex,
   show as movShow,
   store as movStore,
   update as movUpdate,
   destroy as movDestroy,
-} from '../controllers/MovimientoAhorroController.js';
+} from "../controllers/MovimientoAhorroController.js";
 
-// Chat mensajes 
+// Chat mensajes
 import {
   index as chatIndex,
   show as chatShow,
   store as chatStore,
   destroy as chatDestroy,
-} from '../controllers/ChatMensajeController.js';
+} from "../controllers/ChatMensajeController.js";
 
 // Consejo financiero
 import {
@@ -71,114 +70,142 @@ import {
   show as consejoShow,
   store as consejoStore,
   destroy as consejoDestroy,
-} from '../controllers/ConsejoFinancieroController.js';
+} from "../controllers/ConsejoFinancieroController.js";
 
 const router = Router();
 
 /**
+ * =========================
  * AUTENTICACIÓN
+ * =========================
  */
-router.post('/login', AuthController.login);
-router.post('/register', AuthController.register);
-router.get('/profile', authenticateToken, AuthController.getProfile);
-
-
-// --- SECCIÓN ELIMINADA: Rutas de Artículos ---
-
+router.post("/login", AuthController.login);
+router.post("/register", AuthController.register);
+router.get("/profile", authenticateToken, AuthController.getProfile);
 
 /**
+ * =========================
  * USUARIOS
+ * =========================
  */
-router.get('/usuarios', usuarioIndex);
-router.get('/usuarios/:id', usuarioShow);
-router.post('/usuarios', usuarioStore);
-router.put('/usuarios/:id', usuarioUpdate);
-router.delete('/usuarios/:id', usuarioDestroy);
+router.get("/usuarios", usuarioIndex);
+router.get("/usuarios/:id", usuarioShow);
+router.post("/usuarios", usuarioStore);
+router.put("/usuarios/:id", usuarioUpdate);
+router.delete("/usuarios/:id", usuarioDestroy);
 
 /**
+ * =========================
  * GASTOS
+ * =========================
  */
-router.get('/gastos', authenticateToken, gastoIndex); // Recomendado proteger también la lectura
-router.get('/gastos/:id', authenticateToken, gastoShow);
-router.post('/gastos', authenticateToken, gastoStore); // <--- ¡AQUÍ ESTÁ LA CLAVE!
-router.put('/gastos/:id', authenticateToken, gastoUpdate);
-router.delete('/gastos/:id', authenticateToken, gastoDestroy);
+router.get("/gastos", authenticateToken, gastoIndex);
+router.get("/gastos/:id", authenticateToken, gastoShow);
+router.post("/gastos", authenticateToken, gastoStore);
+router.put("/gastos/:id", authenticateToken, gastoUpdate);
+router.delete("/gastos/:id", authenticateToken, gastoDestroy);
 
-// filtrar gastos por usuario
-router.get('/usuarios/:userId/gastos', gastoIndex);
+// Gastos por usuario
+router.get("/usuarios/:userId/gastos", authenticateToken, gastoIndex);
 
 /**
+ * =========================
  * INGRESOS
+ * =========================
  */
-router.get('/ingresos', ingresoIndex);
-router.get('/ingresos/:id', ingresoShow);
-router.post('/ingresos', ingresoStore);
-router.put('/ingresos/:id', ingresoUpdate);
-router.delete('/ingresos/:id', ingresoDestroy);
+router.get("/ingresos", authenticateToken, ingresoIndex);
+router.get("/ingresos/:id", authenticateToken, ingresoShow);
+router.post("/ingresos", authenticateToken, ingresoStore);
+router.put("/ingresos/:id", authenticateToken, ingresoUpdate);
+router.delete("/ingresos/:id", authenticateToken, ingresoDestroy);
 
-// filtrar ingresos por usuario
-router.get('/usuarios/:userId/ingresos', ingresoIndex);
+// Ingresos por usuario
+router.get("/usuarios/:userId/ingresos", authenticateToken, ingresoIndex);
 
 /**
+ * =========================
  * METAS DE AHORRO
+ * =========================
  */
-router.get('/metas', metaIndex);
-router.get('/metas/:id', metaShow);
-router.post('/metas', metaStore);
-router.put('/metas/:id', metaUpdate);
-router.delete('/metas/:id', metaDestroy);
+router.get("/metas", authenticateToken, metaIndex);
+router.get("/metas/:id", authenticateToken, metaShow);
+router.post("/metas", authenticateToken, metaStore);
+router.put("/metas/:id", authenticateToken, metaUpdate);
+router.delete("/metas/:id", authenticateToken, metaDestroy);
 
-// filtrar metas por usuario
-router.get('/usuarios/:userId/metas', metaIndex);
+// Metas por usuario
+router.get("/usuarios/:userId/metas", authenticateToken, metaIndex);
 
 /**
+ * =========================
  * MOVIMIENTOS DE AHORRO
+ * =========================
  */
-router.get('/movimientos', movIndex);
-router.get('/movimientos/:id', movShow);
-router.post('/movimientos', movStore);
-router.put('/movimientos/:id', movUpdate);
-router.delete('/movimientos/:id', movDestroy);
+router.get("/movimientos", authenticateToken, movIndex);
+router.get("/movimientos/:id", authenticateToken, movShow);
+router.post("/movimientos", authenticateToken, movStore);
+router.put("/movimientos/:id", authenticateToken, movUpdate);
+router.delete("/movimientos/:id", authenticateToken, movDestroy);
 
-// Movimientos filtrados por meta
-router.get('/metas/:metaId/movimientos', movIndex);
-
+// Movimientos por meta
+router.get(
+  "/metas/:metaId/movimientos",
+  authenticateToken,
+  movIndex
+);
 
 /**
- * Mensajes de Chat
+ * =========================
+ * MENSAJES DE CHAT
+ * =========================
  */
-router.get('/mensajes', chatIndex);
-router.get('/mensajes/:id', chatShow);
-router.post('/mensajes', authenticateToken, chatStore);
-router.delete('/mensajes/:id', chatDestroy);
+router.get("/mensajes", authenticateToken, chatIndex);
+router.get("/mensajes/:id", authenticateToken, chatShow);
+router.post("/mensajes", authenticateToken, chatStore);
+router.delete("/mensajes/:id", authenticateToken, chatDestroy);
 
-// Filtrar mensajes de un usuario
-router.get('/usuarios/:userId/mensajes', chatIndex);
-
+// Mensajes por usuario
+router.get(
+  "/usuarios/:userId/mensajes",
+  authenticateToken,
+  chatIndex
+);
 
 /**
- * Consejos Financieros
+ * =========================
+ * CONSEJOS FINANCIEROS
+ * =========================
  */
-router.get('/consejos', consejoIndex);
-router.get('/consejos/:id', consejoShow);
-router.post('/consejos', consejoStore);
-router.delete('/consejos/:id', consejoDestroy);
+router.get("/consejos", authenticateToken, consejoIndex);
+router.get("/consejos/:id", authenticateToken, consejoShow);
+router.post("/consejos", authenticateToken, consejoStore);
+router.delete("/consejos/:id", authenticateToken, consejoDestroy);
 
-// Consejos filtrados por usuario
-router.get('/usuarios/:userId/consejos', consejoIndex);
+// Consejos por usuario
+router.get(
+  "/usuarios/:userId/consejos",
+  authenticateToken,
+  consejoIndex
+);
 
-// Dashboard Summary
+/**
+ * =========================
+ * DASHBOARD
+ * =========================
+ */
 router.get(
   "/dashboard/summary",
-  authMiddleware,
+  authenticateToken,
   getDashboardSummary
 );
 
 /**
+ * =========================
  * RUTA BASE
+ * =========================
  */
-router.get('/', (req, res) => {
-  res.json({ message: 'Bienvenido a la API Finanzas Chatbot' });
+router.get("/", (req, res) => {
+  res.json({ message: "Bienvenido a la API Finanzas Chatbot" });
 });
 
 export default router;
