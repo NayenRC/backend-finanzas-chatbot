@@ -5,13 +5,15 @@
  */
 
 import 'dotenv/config';
-import './bot/telegramBot.js'; 
+//import './bot/telegramBot.js'; 
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import router from './routes/router.js';
 import telegramRoutes from './routes/telegram.routes.js';
 import finanzasRoutes from './routes/finanzas.routes.js';
+import './bot/telegramBot.js'; // Asegura que el bot de Telegram se inicie
+import './config/db.js'; // Inicializa la conexión a la base de datos
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -60,4 +62,3 @@ app.use(finanzasRoutes);
 app.listen(3000, () => {
   console.log('🚀 Servidor corriendo en http://localhost:3000');
 });
-

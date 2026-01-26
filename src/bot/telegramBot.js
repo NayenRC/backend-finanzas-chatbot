@@ -25,6 +25,7 @@ const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
 const api = axios.create({
   baseURL: process.env.API_URL,
   timeout: 5000,
+  timeout: 60000, // Aumentamos a 60s para dar tiempo a la IA y DB
   headers: {
     'Content-Type': 'application/json',
   },
@@ -40,6 +41,7 @@ console.log('🤖 SmartFin Telegram Bot activo');
  */
 bot.onText(/\/start/, async msg => {
   const chatId = msg.chat.id;
+  console.log('📩 Mensaje /start recibido:', msg);
 
   try {
     console.log('🔐 LOGIN TELEGRAM');
@@ -58,7 +60,8 @@ bot.onText(/\/start/, async msg => {
       `✅ Bienvenido ${msg.from.first_name}\n\n` +
       `Usa:\n` +
       `/gasto monto descripción\n` +
-      `/ingreso monto descripción`
+      `/ingreso monto descripción\n` +
+      `/verbalance - Ver resumen del mes`
     );
   } catch (error) {
     console.error('❌ ERROR LOGIN TELEGRAM:', {
@@ -84,7 +87,7 @@ bot.onText(/\/gasto (\d+) (.+)/, async (msg, match) => {
 
   try {
     await api.post(
-      '/gastos',
+      '/telegram/gastos', // ✅ CAMBIO: Usamos la ruta dedicada de Telegram
       {
         monto: Number(match[1]),
         descripcion: match[2],
@@ -115,7 +118,7 @@ bot.onText(/\/ingreso (\d+) (.+)/, async (msg, match) => {
 
   try {
     await api.post(
-      '/ingresos',
+      '/telegram/ingresos', // ✅ CAMBIO: Usamos la ruta dedicada de Telegram
       {
         monto: Number(match[1]),
         descripcion: match[2],
@@ -133,3 +136,112 @@ bot.onText(/\/ingreso (\d+) (.+)/, async (msg, match) => {
   }
 });
 
+/**
+ * VER BALANCE
+ */
+bot.onText(/\/verbalance/, async (msg) => {
+  const chatId = msg.chat.id;
+  const token = sessions.get(chatId);
+
+  if (!token) {
+    return bot.sendMessage(chatId, '⚠️ Usa /start primero');
+  }
+
+  try {
+    const res = await api.get('/telegram/balance', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const { periodo, ingresos, gastos, balance, lista_ingresos, lista_gastos } = res.data;
+    
+    let mensaje = `📊 Balance Financiero (${periodo})\n\n`;
+
+    // Helper para formatear números
+    const fmt = (n) => Number(n).toLocaleString('es-CL');
+
+    // Listar Ingresos
+    if (lista_ingresos && lista_ingresos.length > 0) {
+      mensaje += `📥 Ingresos:\n`;
+      // Mostramos solo los últimos 10 para evitar errores por mensaje muy largo
+      lista_ingresos.slice(0, 10).forEach(i => {
+        mensaje += `+ $${fmt(i.monto)} | ${i.descripcion}\n`;
+      });
+      if (lista_ingresos.length > 10) mensaje += `... (+${lista_ingresos.length - 10} más)\n`;
+      mensaje += `\n`;
+    } else {
+      mensaje += `📥 Ingresos: (Sin movimientos)\n\n`;
+    }
+
+    // Listar Gastos
+    if (lista_gastos && lista_gastos.length > 0) {
+      mensaje += `📤 Gastos:\n`;
+      lista_gastos.slice(0, 10).forEach(g => {
+        mensaje += `- $${fmt(g.monto)} | ${g.descripcion}\n`;
+      });
+      if (lista_gastos.length > 10) mensaje += `... (+${lista_gastos.length - 10} más)\n`;
+      mensaje += `\n`;
+    } else {
+      mensaje += `📤 Gastos: (Sin movimientos)\n\n`;
+    }
+
+    mensaje += `-----------------------------\n` +
+      ` Total Ingresos: $${fmt(ingresos)}\n` +
+      `💸 Total Gastos: $${fmt(gastos)}\n` +
+      `⚖️ Balance Neto: $${fmt(balance)} ${balance >= 0 ? '🟢' : '🔴'}`;
+
+    // Enviamos sin parse_mode para evitar errores si las descripciones tienen caracteres raros
+    await bot.sendMessage(chatId, mensaje);
+
+  } catch (error) {
+    console.error('❌ ERROR BALANCE:', error.response?.data || error.message);
+    bot.sendMessage(chatId, '❌ Error al obtener el balance');
+  }
+});
+
+/**
+ * AI CHAT HANDLER (Mensajes de texto normales)
+ */
+bot.on('message', async (msg) => {
+  const chatId = msg.chat.id;
+  const text = msg.text;
+
+  // Ignorar comandos que empiezan con '/'
+  if (!text || text.startsWith('/')) {
+    return;
+  }
+
+  const token = sessions.get(chatId);
+
+  if (!token) {
+    return bot.sendMessage(chatId, '⚠️ Por favor inicia sesión primero con /start');
+  }
+
+  // Notificar que el bot está "escribiendo..."
+  bot.sendChatAction(chatId, 'typing');
+
+  try {
+    const res = await api.post(
+      '/telegram/chat',
+      { mensaje: text },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    const { response, intent } = res.data;
+
+    // Responder al usuario con la respuesta de la IA
+    bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
+    // Intentamos enviar con Markdown, si falla (por caracteres raros), enviamos plano
+    try {
+      await bot.sendMessage(chatId, response, { parse_mode: 'Markdown' });
+    } catch (err) {
+      console.log('⚠️ Markdown falló, enviando texto plano...');
+      await bot.sendMessage(chatId, response);
+    }
+
+  } catch (error) {
+    console.error('❌ ERROR AI CHAT:', error.response?.data || error.message);
+    bot.sendMessage(chatId, '❌ Lo siento, tuve un problema procesando tu mensaje.');
+  }
+});
