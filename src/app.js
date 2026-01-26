@@ -6,6 +6,8 @@ import 'dotenv/config';
 
 import db from './config/db.js';     // <--- IMPORTANTE: Importar la conexión
 import router from './routes/router.js';
+import telegramRoutes from './routes/telegram.routes.js';
+import finanzasRoutes from './routes/finanzas.routes.js';
 
 // --- CONECTAR OBJECTION A LA BASE DE DATOS ---
 Model.knex(db); // <--- Configurar Objection para usar la conexión de Knex
@@ -13,6 +15,7 @@ Model.knex(db); // <--- Configurar Objection para usar la conexión de Knex
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// =====================
 // Middlewares
 app.use(cors()); 
 app.use(morgan('dev')); 
@@ -21,6 +24,13 @@ app.use(express.json());
 // Rutas
 app.use('/api', router); // Ojo: Tus rutas empiezan con /api
 
+// =====================
+// Import
+// =====================
+app.use(telegramRoutes);
+app.use(finanzasRoutes);
+
+// =====================
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
