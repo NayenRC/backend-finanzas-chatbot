@@ -7,6 +7,10 @@ import { Router } from 'express';
 // Auth
 import AuthController from '../controllers/AuthController.js';
 import { authenticateToken } from '../middlewares/authMiddleware.js';
+// Dashboard
+import { getDashboardSummary } from "../controllers/DashboardController.js";
+import authMiddleware from "../middlewares/authMiddleware.js";
+
 
 // Usuarios
 import {
@@ -162,6 +166,13 @@ router.delete('/consejos/:id', consejoDestroy);
 
 // Consejos filtrados por usuario
 router.get('/usuarios/:userId/consejos', consejoIndex);
+
+// Dashboard Summary
+router.get(
+  "/dashboard/summary",
+  authMiddleware,
+  getDashboardSummary
+);
 
 /**
  * RUTA BASE
