@@ -37,6 +37,15 @@ export const store = async (req, res) => {
   try {
     const data = req.body;
 
+    // 1. Asignar ID desde el token (si existe)
+    if (req.user && req.user.id) {
+        data.user_id = req.user.id;
+    }
+
+    // 2. Definir que NO es un mensaje del bot (es del usuario)
+    data.es_bot = false; 
+
+    // Validación
     if (!data.user_id || !data.mensaje) {
       return res.status(400).json({ message: 'Faltan campos obligatorios' });
     }
