@@ -121,11 +121,29 @@ const getBalance = async (req, res) => {
     const totalGastos = Number(expenseSummary?.total_monto || 0);
     const balance = totalIngresos - totalGastos;
 
+    // --- GENERACIÓN DE GRÁFICO ---
+    // Calculamos disponible (si es negativo, es 0 para el gráfico)
+    const disponible = balance > 0 ? balance : 0;
+    
+    const chartConfig = {
+      type: 'pie',
+      data: {
+        labels: ['Gastos', 'Disponible'],
+        datasets: [{
+          data: [totalGastos, disponible],
+          backgroundColor: ['#FF6384', '#36A2EB'], // Rojo y Azul
+        }]
+      },
+      options: { plugins: { title: { display: true, text: 'Disponibilidad' } } }
+    };
+    const chartUrl = `https://quickchart.io/chart?c=${encodeURIComponent(JSON.stringify(chartConfig))}`;
+
     return res.json({
       periodo: 'Total Histórico',
       ingresos: totalIngresos,
       gastos: totalGastos,
       balance: balance,
+      grafico_url: chartUrl,
       lista_ingresos: incomesList,
       lista_gastos: expensesList
     });
