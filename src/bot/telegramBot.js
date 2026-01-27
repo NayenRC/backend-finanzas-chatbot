@@ -68,7 +68,7 @@ bot.on('message', async (msg) => {
     // Notificar que el bot está "escribiendo..."
     bot.sendChatAction(chatId, 'typing');
 
-    // Procesar mensaje con AI Command (igual que zdebug)
+    // Procesar mensaje con AI Commandd
     const result = await aiChatCommand.processMessage(userId, text);
 
     // Limpiar símbolos ### que Telegram no soporta
