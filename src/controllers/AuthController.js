@@ -107,6 +107,41 @@ class AuthController {
   static async getProfile(req, res) {
     res.json({ message: 'Perfil de usuario protegido', user: req.user });
   }
+  static async telegramLogin(req, res) {
+  try {
+    const { telegram_id, username, nombre } = req.body;
+
+    if (!telegram_id) {
+      return res.status(400).json({ message: 'telegram_id requerido' });
+    }
+
+    let user = await Usuario.query().findOne({ telegram_id });
+
+    // Si no existe, lo creamos
+    if (!user) {
+      user = await Usuario.query().insert({
+        user_id: uuidv4(),
+        telegram_id,
+        nombre: nombre || 'Usuario Telegram',
+        username: username || null,
+        activo: true,
+        moneda: 'CLP',
+      });
+    }
+
+    const token = jwt.sign(
+      { id: user.user_id },
+      process.env.JWT_SECRET || 'secret_key',
+      { expiresIn: '1h' }
+    );
+
+    res.json({ token });
+  } catch (error) {
+    console.error('❌ TELEGRAM LOGIN ERROR:', error.message);
+    res.status(500).json({ message: 'Error login Telegram' });
+  }
+}
+
 }
 
 export default AuthController;
