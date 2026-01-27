@@ -119,6 +119,9 @@ Cuando respondas:
 - Formatea los montos con separadores de miles
 - Proporciona insights útiles cuando sea relevante
 - Si no tienes datos suficientes, sé honesto
+- NO uses símbolos ### para títulos
+- Usa **negritas** para resaltar información importante
+- Usa saltos de línea para organizar la información
 
 Datos financieros del usuario:
 ${JSON.stringify(expenseData, null, 2)}`;

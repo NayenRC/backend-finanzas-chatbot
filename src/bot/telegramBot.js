@@ -71,8 +71,19 @@ bot.on('message', async (msg) => {
     // Procesar mensaje con AI Command (igual que zdebug)
     const result = await aiChatCommand.processMessage(userId, text);
 
-    // Enviar respuesta en texto plano (sin Markdown)
-    await bot.sendMessage(chatId, result.response);
+    // Limpiar símbolos ### que Telegram no soporta
+    let cleanResponse = result.response
+      .replace(/####+\s*/g, '')  // Eliminar ### y ####
+      .replace(/\*\*\*\*/g, '**'); // Convertir **** a **
+
+    // Enviar respuesta con formato Markdown
+    try {
+      await bot.sendMessage(chatId, cleanResponse, { parse_mode: 'Markdown' });
+    } catch (err) {
+      // Si Markdown falla (caracteres especiales), enviar texto plano
+      console.log('⚠️ Markdown falló, enviando texto plano...');
+      await bot.sendMessage(chatId, cleanResponse);
+    }
 
   } catch (error) {
     console.error('❌ ERROR procesando mensaje:', error);
