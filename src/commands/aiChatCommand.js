@@ -146,7 +146,7 @@ async function handleIncomeRecording(userId, userMessage) {
             fecha: new Date().toISOString().split('T')[0]
         });
 
-        return `✅ Ingreso registrado exitosamente!\n\n💰 Monto: $${incomeData.monto.toLocaleString('es-CL')}\n📝 Descripción: ${incomeData.descripcion}${categoria ? `\n🏷️ Categoría: ${categoria.nombre}` : ''}`;
+        return `✅ Ingreso registrado exitosamente y 3 besitos !\n\n💰 Monto: $${incomeData.monto.toLocaleString('es-CL')}\n📝 Descripción: ${incomeData.descripcion}${categoria ? `\n🏷️ Categoría: ${categoria.nombre}` : ''}`;
 
     } catch (error) {
         console.error('❌ Error registrando ingreso:', error);
