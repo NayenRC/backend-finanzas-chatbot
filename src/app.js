@@ -1,54 +1,30 @@
-/**
- * Archivo Principal de la Aplicación (Entry Point)
- *
- * Configura el servidor Express, middlewares y rutas.
- */
-
-import 'dotenv/config';
-//import './bot/telegramBot.js'; 
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import { Model } from 'objection'; // <--- IMPORTANTE: Importar Model
+import 'dotenv/config'; 
+
+import db from './config/db.js';     // <--- IMPORTANTE: Importar la conexión
 import router from './routes/router.js';
 import telegramRoutes from './routes/telegram.routes.js';
 import finanzasRoutes from './routes/finanzas.routes.js';
 import './bot/telegramBot.js'; // Asegura que el bot de Telegram se inicie
 import './config/db.js'; // Inicializa la conexión a la base de datos
 
+// --- CONECTAR OBJECTION A LA BASE DE DATOS ---
+Model.knex(db); // <--- Configurar Objection para usar la conexión de Knex
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // =====================
 // Middlewares
-// =====================
-app.use(cors());
-app.use(morgan('dev'));
-app.use(express.json());
+app.use(cors()); 
+app.use(morgan('dev')); 
+app.use(express.json()); 
 
-// =====================
-// RUTA RAÍZ (IMPORTANTE)
-// =====================
-app.get('/', (req, res) => {
-  res.json({
-    message: 'SmartFin Backend activo 🚀',
-    status: 'OK'
-  });
-});
-
-// =====================
-// HEALTH CHECK
-// =====================
-app.get('/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    message: 'Backend funcionando correctamente'
-  });
-});
-
-// =====================
-// Rutas API
-// =====================
-app.use('/api', router);
+// Rutas
+app.use('/api', router); // Ojo: Tus rutas empiezan con /api
 
 // =====================
 // Import
@@ -58,7 +34,7 @@ app.use(finanzasRoutes);
 
 // =====================
 // Iniciar servidor
-// =====================
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Ambiente: ${process.env.NODE_ENV || 'development'}`);
 });
