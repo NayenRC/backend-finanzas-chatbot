@@ -6,8 +6,8 @@ import 'dotenv/config';
 
 import db from './config/db.js';     // <--- IMPORTANTE: Importar la conexión
 import router from './routes/router.js';
-import telegramRoutes from './routes/telegram.routes.js';
-import finanzasRoutes from './routes/finanzas.routes.js';
+import telegramRoutes from './routes/telegramRoutes.js';
+import finanzasRoutes from './routes/finanzasRoutes.js';
 
 // --- CONECTAR OBJECTION A LA BASE DE DATOS ---
 Model.knex(db); // <--- Configurar Objection para usar la conexión de Knex
