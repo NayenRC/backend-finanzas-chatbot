@@ -1,22 +1,24 @@
+/**
+ * Rutas de Telegram
+ */
+
 import { Router } from 'express';
+import TelegramController from '../controllers/TelegramController.js';
+import { authenticateToken as authMiddleware } from '../middlewares/authMiddleware.js';
+
 const router = Router();
 
-router.post('/telegram/login', (req, res) => {
-  const { telegram_id, username, nombre } = req.body;
+// Login para obtener token
+router.post('/telegram/login', TelegramController.login);
 
-  if (!telegram_id) {
-    return res.status(400).json({ error: 'telegram_id requerido' });
-  }
+// Chat con IA (Protegido)
+router.post('/telegram/chat', authMiddleware, TelegramController.chat);
 
-  // 🔑 Simulación de login
-  return res.json({
-    token: 'telegram-token-demo',
-    user: {
-      telegram_id,
-      username,
-      nombre,
-    },
-  });
-});
+// Obtener Balance (Protegido)
+router.get('/telegram/balance', authMiddleware, TelegramController.getBalance);
+
+// Registrar Movimientos (Protegido)
+router.post('/telegram/gastos', authMiddleware, TelegramController.registerExpense);
+router.post('/telegram/ingresos', authMiddleware, TelegramController.registerIncome);
 
 export default router;

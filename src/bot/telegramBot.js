@@ -1,135 +1,94 @@
 import 'dotenv/config';
 import TelegramBot from 'node-telegram-bot-api';
-import axios from 'axios';
+import aiChatCommand from '../commands/aiChatCommand.js';
+import Usuario from '../models/Usuario.js';
 
-const API = process.env.API_URL || 'http://localhost:3000/api';
-
-
-// 🔐 Validaciones duras
+// 🔐 Validaciones
 if (!process.env.TELEGRAM_BOT_TOKEN) {
   throw new Error('❌ TELEGRAM_BOT_TOKEN no definido');
 }
 
-if (!process.env.API_URL) {
-  throw new Error('❌ API_URL no definido');
-}
-
-console.log('🌐 API USADA POR TELEGRAM:', process.env.API_URL);
+console.log('🤖 Iniciando SmartFin Telegram Bot (AI Mode)...');
 
 // 🤖 Crear bot
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
   polling: true,
 });
 
-// ⚠️ Axios forzado a HTTP
-const api = axios.create({
-  baseURL: process.env.API_URL,
-  timeout: 5000,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+// Mapeo de chatId a userId (en memoria)
+const userSessions = new Map();
 
-// Guardar tokens por chat
-const sessions = new Map();
-
-console.log('🤖 SmartFin Telegram Bot activo');
+console.log('✅ SmartFin Telegram Bot activo (Modo Conversacional AI)');
 
 /**
- * START / LOGIN TELEGRAM
+ * Auto-login: Encuentra o crea usuario basado en telegram_id
  */
-bot.onText(/\/start/, async msg => {
-  const chatId = msg.chat.id;
+async function ensureUser(telegramUser) {
+  const telegramId = String(telegramUser.id);
 
-  try {
-    console.log('🔐 LOGIN TELEGRAM');
-    console.log('Telegram ID:', msg.from.id);
+  // Buscar usuario existente
+  let usuario = await Usuario.query().findOne({ telegram_id: telegramId });
 
-    const res = await api.post('/telegram/login', {
-      telegram_id: String(msg.from.id),
-      username: msg.from.username || null,
-      nombre: msg.from.first_name || 'Usuario Telegram',
+  // Si no existe, crear uno nuevo
+  if (!usuario) {
+    console.log(`✨ Creando nuevo usuario: ${telegramUser.first_name} (${telegramId})`);
+    usuario = await Usuario.query().insert({
+      telegram_id: telegramId,
+      nombre: telegramUser.first_name || telegramUser.username || 'Usuario Telegram',
+      activo: true
     });
-
-    sessions.set(chatId, res.data.token);
-
-    bot.sendMessage(
-      chatId,
-      `✅ Bienvenido ${msg.from.first_name}\n\n` +
-      `Usa:\n` +
-      `/gasto monto descripción\n` +
-      `/ingreso monto descripción`
-    );
-  } catch (error) {
-    console.error('❌ ERROR LOGIN TELEGRAM:', {
-      message: error.message,
-      status: error.response?.status,
-      data: error.response?.data,
-    });
-
-    bot.sendMessage(chatId, '❌ Error al iniciar sesión');
   }
-});
+
+  return usuario.user_id;
+}
 
 /**
- * REGISTRAR GASTO
+ * UNIVERSAL MESSAGE HANDLER
+ * Procesa TODOS los mensajes con IA (sin comandos)
  */
-bot.onText(/\/gasto (\d+) (.+)/, async (msg, match) => {
+bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
-  const token = sessions.get(chatId);
+  const text = msg.text;
 
-  if (!token) {
-    return bot.sendMessage(chatId, '⚠️ Usa /start primero');
+  // Ignorar mensajes sin texto
+  if (!text) {
+    return;
   }
 
   try {
-    await api.post(
-      '/gastos',
-      {
-        monto: Number(match[1]),
-        descripcion: match[2],
-        fecha: new Date().toISOString(),
-      },
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    // Auto-login: Obtener o crear usuario
+    let userId = userSessions.get(chatId);
 
-    bot.sendMessage(chatId, '💸 Gasto registrado');
+    if (!userId) {
+      userId = await ensureUser(msg.from);
+      userSessions.set(chatId, userId);
+      console.log(`👤 Usuario ${userId} conectado al chat ${chatId}`);
+    }
+
+    // Notificar que el bot está "escribiendo..."
+    bot.sendChatAction(chatId, 'typing');
+
+    // Procesar mensaje con AI Commandd
+    const result = await aiChatCommand.processMessage(userId, text);
+
+    // Limpiar símbolos ### que Telegram no soporta
+    let cleanResponse = result.response
+      .replace(/####+\s*/g, '')  // Eliminar ### y ####
+      .replace(/\*\*\*\*/g, '**'); // Convertir **** a **
+
+    // Enviar respuesta con formato Markdown
+    try {
+      await bot.sendMessage(chatId, cleanResponse, { parse_mode: 'Markdown' });
+    } catch (err) {
+      // Si Markdown falla (caracteres especiales), enviar texto plano
+      console.log('⚠️ Markdown falló, enviando texto plano...');
+      await bot.sendMessage(chatId, cleanResponse);
+    }
+
   } catch (error) {
-    console.error('❌ ERROR GASTO:', error.response?.data || error.message);
-    bot.sendMessage(chatId, '❌ Error al registrar gasto');
+    console.error('❌ ERROR procesando mensaje:', error);
+    bot.sendMessage(chatId, '❌ Lo siento, tuve un problema procesando tu mensaje. Por favor intenta de nuevo.');
   }
 });
 
-/**
- * REGISTRAR INGRESO
- */
-bot.onText(/\/ingreso (\d+) (.+)/, async (msg, match) => {
-  const chatId = msg.chat.id;
-  const token = sessions.get(chatId);
-
-  if (!token) {
-    return bot.sendMessage(chatId, '⚠️ Usa /start primero');
-  }
-
-  try {
-    await api.post(
-      '/ingresos',
-      {
-        monto: Number(match[1]),
-        descripcion: match[2],
-        fecha: new Date().toISOString(),
-      },
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
-
-    bot.sendMessage(chatId, '💰 Ingreso registrado');
-  } catch (error) {
-    console.error('❌ ERROR INGRESO:', error.response?.data || error.message);
-    bot.sendMessage(chatId, '❌ Error al registrar ingreso');
-  }
-});
-
+console.log('💬 Bot listo para recibir mensajes conversacionales');

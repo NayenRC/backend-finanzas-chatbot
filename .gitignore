@@ -34,3 +34,7 @@ Thumbs.db
 
 # Misc
 *.tgz
+
+# Debug scripts
+zdebug.js
+src/zdebug.js
