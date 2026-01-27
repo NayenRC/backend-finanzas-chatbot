@@ -1,0 +1,13 @@
+node_modules
+.git
+.env
+.vscode
+.idea
+*.log
+npm-debug.log*
+.DS_Store
+*.swp
+*.swo
+.gemini
+brain
+README.md
