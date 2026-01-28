@@ -9,7 +9,10 @@
     "dev": "nodemon src/app.js",
     "db:migrate": "knex migrate:latest",
     "db:seed": "knex seed:run",
-    "command:seed": "node src/commands/seed.js"
+    "command:seed": "node src/commands/seed.js",
+    "test": "NODE_OPTIONS=--experimental-vm-modules jest",
+    "test:watch": "NODE_OPTIONS=--experimental-vm-modules jest --watch",
+    "test:coverage": "NODE_OPTIONS=--experimental-vm-modules jest --coverage"
   },
   "keywords": [
     "nodejs",
@@ -35,7 +38,10 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.0"
+    "@types/jest": "^30.0.0",
+    "jest": "^30.2.0",
+    "nodemon": "^3.1.0",
+    "supertest": "^7.2.2"
   },
   "engines": {
     "node": ">=20.0.0"
