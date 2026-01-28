@@ -1,12 +1,15 @@
 import { Router } from "express";
-import AuthController from "../controllers/AuthController.js";
 import { authenticateToken } from "../middlewares/authMiddleware.js";
+import { login } from "../controllers/authController.js";
 
 const router = Router();
 
-router.post("/login", AuthController.login);
-router.post("/register", AuthController.register);
-router.get("/profile", authenticateToken, AuthController.getProfile);
+// 🔐 LOGIN con Supabase Auth
+router.post("/auth/login", login);
+
+// 👤 PERFIL protegido con JWT propio
+router.get("/profile", authenticateToken, (req, res) => {
+  res.json(req.user);
+});
 
 export default router;
-
