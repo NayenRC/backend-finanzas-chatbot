@@ -20,8 +20,9 @@ export const index = async (req, res) => {
 
 export const show = async (req, res) => {
   try {
+    const userId = req.user.id || req.user.user_id;
     const { id } = req.params;
-    const mensaje = await ChatMensaje.find(id);
+    const mensaje = await ChatMensaje.findByIdAndUser(id, userId);
 
     if (!mensaje) {
       return res.status(404).json({ message: 'Mensaje no encontrado' });
@@ -61,8 +62,14 @@ export const store = async (req, res) => {
 
 export const destroy = async (req, res) => {
   try {
+    const userId = req.user.id || req.user.user_id;
     const { id } = req.params;
-    await ChatMensaje.delete(id);
+    const deleted = await ChatMensaje.deleteByUser(id, userId);
+
+    if (!deleted) {
+      return res.status(404).json({ message: 'Mensaje no encontrado' });
+    }
+
     res.json({ message: 'Mensaje eliminado correctamente' });
   } catch (error) {
     console.error(error);
