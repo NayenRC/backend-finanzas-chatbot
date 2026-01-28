@@ -1,0 +1,18 @@
+COLUMNS_GASTO: [
+  { column_name: 'id_gasto', data_type: 'bigint' },
+  { column_name: 'user_id', data_type: 'uuid' },
+  { column_name: 'categoria_id', data_type: 'bigint' },
+  { column_name: 'monto', data_type: 'numeric' },
+  { column_name: 'descripcion', data_type: 'text' },
+  { column_name: 'fecha', data_type: 'date' },
+  { column_name: 'creado_en', data_type: 'timestamp with time zone' }
+]
+COLUMNS_INGRESO: [
+  { column_name: 'id_ingreso', data_type: 'bigint' },
+  { column_name: 'user_id', data_type: 'uuid' },
+  { column_name: 'categoria_id', data_type: 'bigint' },
+  { column_name: 'monto', data_type: 'numeric' },
+  { column_name: 'descripcion', data_type: 'text' },
+  { column_name: 'fecha', data_type: 'date' },
+  { column_name: 'creado_en', data_type: 'timestamp with time zone' }
+]

@@ -2,10 +2,10 @@ import ConsejoFinanciero from '../models/ConsejoFinanciero.js';
 
 export const index = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const idToSearch = req.params.userId || (req.user ? (req.user.id || req.user.user_id) : null);
 
-    if (userId) {
-      const consejosUsuario = await ConsejoFinanciero.findByUser(userId);
+    if (idToSearch) {
+      const consejosUsuario = await ConsejoFinanciero.findByUser(idToSearch);
       return res.json(consejosUsuario);
     }
 
@@ -19,8 +19,9 @@ export const index = async (req, res) => {
 
 export const show = async (req, res) => {
   try {
+    const userId = req.user.id || req.user.user_id;
     const { id } = req.params;
-    const consejo = await ConsejoFinanciero.find(id);
+    const consejo = await ConsejoFinanciero.findByIdAndUser(id, userId);
 
     if (!consejo) {
       return res.status(404).json({ message: 'Consejo no encontrado' });
@@ -53,8 +54,14 @@ export const store = async (req, res) => {
 
 export const destroy = async (req, res) => {
   try {
+    const userId = req.user.id || req.user.user_id;
     const { id } = req.params;
-    await ConsejoFinanciero.delete(id);
+    const deleted = await ConsejoFinanciero.deleteByUser(id, userId);
+
+    if (!deleted) {
+      return res.status(404).json({ message: 'Consejo no encontrado' });
+    }
+
     res.json({ message: 'Consejo eliminado correctamente' });
   } catch (error) {
     console.error(error);

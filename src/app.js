@@ -2,12 +2,12 @@ import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import { Model } from 'objection'; // <--- IMPORTANTE: Importar Model
-import 'dotenv/config'; 
+import 'dotenv/config';
 
 import db from './config/db.js';     // <--- IMPORTANTE: Importar la conexión
-import router from './routes/router.js';
-import telegramRoutes from './routes/telegram.routes.js';
-import finanzasRoutes from './routes/finanzas.routes.js';
+import router from './routes/index.js';
+import telegramRoutes from './routes/telegramRoutes.js';
+// import finanzasRoutes from './routes/finanzas.routes.js';
 import './bot/telegramBot.js'; // Asegura que el bot de Telegram se inicie
 import './config/db.js'; // Inicializa la conexión a la base de datos
 
@@ -19,9 +19,13 @@ const PORT = process.env.PORT || 3000;
 
 // =====================
 // Middlewares
-app.use(cors()); 
-app.use(morgan('dev')); 
-app.use(express.json()); 
+// Middlewares
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+  credentials: true
+}));
+app.use(morgan('dev'));
+app.use(express.json());
 
 // Rutas
 app.use('/api', router); // Ojo: Tus rutas empiezan con /api
@@ -30,7 +34,7 @@ app.use('/api', router); // Ojo: Tus rutas empiezan con /api
 // Import
 // =====================
 app.use(telegramRoutes);
-app.use(finanzasRoutes);
+// app.use(finanzasRoutes);
 
 // =====================
 // Iniciar servidor

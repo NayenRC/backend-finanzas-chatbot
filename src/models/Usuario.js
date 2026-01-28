@@ -22,10 +22,13 @@ class Usuario extends Model {
         email: { type: 'string', minLength: 1, maxLength: 255 },
         moneda: { type: 'string', maxLength: 3 }, // Ej: 'CLP', 'USD'
         telefono: { type: 'string' },
-        activo: { type: 'boolean' }
+        activo: { type: 'boolean' },
+        reset_password_token: { type: ['string', 'null'] },
+        reset_password_expires: { type: ['string', 'null', 'object'], format: 'date-time' }
       }
     };
   }
 }
+
 
 export default Usuario;

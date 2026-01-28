@@ -2,11 +2,12 @@ import MetaAhorro from '../models/MetaAhorro.js';
 
 export const index = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userIdParam = req.params.userId;
+    const idToSearch = userIdParam || (req.user ? (req.user.id || req.user.user_id) : null);
 
-    if (userId) {
+    if (idToSearch) {
       // Metas de un usuario específico
-      const metasPorUsuario = await MetaAhorro.findByUser(userId);
+      const metasPorUsuario = await MetaAhorro.findByUser(idToSearch);
       return res.json(metasPorUsuario);
     }
 
@@ -21,8 +22,9 @@ export const index = async (req, res) => {
 
 export const show = async (req, res) => {
   try {
+    const userId = req.user.id || req.user.user_id;
     const { id } = req.params;
-    const meta = await MetaAhorro.find(id);
+    const meta = await MetaAhorro.findByIdAndUser(id, userId);
 
     if (!meta) {
       return res.status(404).json({ message: 'Meta de ahorro no encontrada' });
@@ -38,6 +40,10 @@ export const show = async (req, res) => {
 export const store = async (req, res) => {
   try {
     const data = req.body;
+    // Asignar usuario si está disponible
+    if (req.user && (req.user.id || req.user.user_id)) {
+      data.user_id = req.user.id || req.user.user_id;
+    }
 
     // Validación mínima
     if (!data.user_id || !data.nombre || !data.monto_objetivo) {
@@ -54,10 +60,11 @@ export const store = async (req, res) => {
 
 export const update = async (req, res) => {
   try {
+    const userId = req.user.id || req.user.user_id;
     const { id } = req.params;
     const data = req.body;
 
-    const updatedMeta = await MetaAhorro.update(id, data);
+    const updatedMeta = await MetaAhorro.updateByUser(id, userId, data);
 
     if (!updatedMeta) {
       return res.status(404).json({ message: 'Meta de ahorro no encontrada' });
@@ -72,8 +79,14 @@ export const update = async (req, res) => {
 
 export const destroy = async (req, res) => {
   try {
+    const userId = req.user.id || req.user.user_id;
     const { id } = req.params;
-    await MetaAhorro.delete(id);
+    const deleted = await MetaAhorro.deleteByUser(id, userId);
+
+    if (!deleted) {
+      return res.status(404).json({ message: 'Meta de ahorro no encontrada' });
+    }
+
     res.json({ message: 'Meta de ahorro eliminada correctamente' });
   } catch (error) {
     console.error(error);
