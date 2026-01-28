@@ -76,8 +76,15 @@ async function processMessage(userId, userMessage) {
  */
 async function handleExpenseRecording(userId, userMessage) {
     try {
+        console.log(`📝 Registrando gasto para usuario ${userId}: "${userMessage}"`);
+
         // Get available categories
         const categories = await supabaseService.getCategories('GASTO');
+        console.log(`📂 Categorías de GASTO encontradas: ${categories.length}`);
+
+        if (categories.length === 0) {
+            return '❌ No hay categorías de gastos configuradas. Por favor contacta al administrador.';
+        }
 
         // Use AI to extract expense data
         const expenseData = await openRouterService.classifyExpense(userMessage, categories);
@@ -111,7 +118,19 @@ async function handleExpenseRecording(userId, userMessage) {
 
     } catch (error) {
         console.error('❌ Error registrando gasto:', error);
-        return '❌ Hubo un error al registrar el gasto. Por favor intenta de nuevo.';
+        console.error('Stack trace:', error.stack);
+        console.error('UserId:', userId);
+        console.error('UserMessage:', userMessage);
+
+        // Return more specific error message
+        if (error.message && error.message.includes('foreign key')) {
+            return '❌ Error: El usuario no existe en el sistema. Por favor contacta al administrador.';
+        } else if (error.message && error.message.includes('null value')) {
+            return '❌ Error: Faltan datos requeridos. Intenta: "Gasté 5000 en almuerzo"';
+        } else {
+            const errorMsg = error.message || 'Error desconocido';
+            return `❌ Error al registrar gasto: ${errorMsg}\n\nPor favor intenta de nuevo o contacta al administrador.`;
+        }
     }
 }
 
@@ -146,7 +165,7 @@ async function handleIncomeRecording(userId, userMessage) {
             fecha: new Date().toISOString().split('T')[0]
         });
 
-        return `✅ Ingreso registrado exitosamente y 3 besitos !\n\n💰 Monto: $${incomeData.monto.toLocaleString('es-CL')}\n📝 Descripción: ${incomeData.descripcion}${categoria ? `\n🏷️ Categoría: ${categoria.nombre}` : ''}`;
+        return `✅ Ingreso registrado exitosamente!\n\n💰 Monto: $${incomeData.monto.toLocaleString('es-CL')}\n📝 Descripción: ${incomeData.descripcion}${categoria ? `\n🏷️ Categoría: ${categoria.nombre}` : ''}`;
 
     } catch (error) {
         console.error('❌ Error registrando ingreso:', error);

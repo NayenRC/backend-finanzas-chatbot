@@ -1,0 +1,2 @@
+Using environment: [35mdevelopment[39m
+[32mBatch 3 run: 2 migrations[39m

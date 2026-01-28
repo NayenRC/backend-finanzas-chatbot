@@ -5,7 +5,7 @@ import 'dotenv/config';
  * Utiliza variables de entorno para la conexión a la base de datos.
  */
 export default {
-development: {
+  development: {
     client: 'pg',
     connection: {
       connectionString: process.env.DATABASE_URL,

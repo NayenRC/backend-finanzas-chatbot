@@ -1,44 +1,29 @@
-import Ingreso from "../models/Ingreso.js";
-import Gasto from "../models/Gasto.js";
+import Dashboard from "../models/Dashboard.js";
 
 export const getDashboardSummary = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user.user_id;
 
-    // Total ingresos
-    const ingresos = await Ingreso.sum("monto", {
-      where: { usuario_id: userId },
-    });
+    // 1. Obtener sumas desde el modelo Dashboard
+    const incomeSummary = await Dashboard.getIncomeSummary(userId);
+    const expenseSummary = await Dashboard.getExpenseSummary(userId);
+    const expensesByCategory = await Dashboard.getExpensesByCategory(userId);
 
-    // Total gastos
-    const gastos = await Gasto.sum("monto", {
-      where: { usuario_id: userId },
-    });
+    const incomeTotal = Number(incomeSummary?.total_monto || 0);
+    const expenseTotal = Number(expenseSummary?.total_monto || 0);
 
-    // Gastos por categoría
-    const gastosPorCategoria = await Gasto.findAll({
-      where: { usuario_id: userId },
-      attributes: [
-        "categoria",
-        [
-          Gasto.sequelize.fn("SUM", Gasto.sequelize.col("monto")),
-          "amount",
-        ],
-      ],
-      group: ["categoria"],
-    });
-
+    // 2. Responder con el formato que espera el Frontend
     res.json({
-      income: ingresos || 0,
-      expenses: gastos || 0,
-      balance: (ingresos || 0) - (gastos || 0),
-      expensesByCategory: gastosPorCategoria.map((g) => ({
+      income: incomeTotal,
+      expenses: expenseTotal,
+      balance: incomeTotal - expenseTotal,
+      expensesByCategory: expensesByCategory.map((g) => ({
         category: g.categoria,
-        amount: Number(g.dataValues.amount),
+        amount: Number(g.total || 0),
       })),
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error dashboard" });
+    console.error("❌ DASHBOARD ERROR:", error);
+    res.status(500).json({ message: "Error al cargar el dashboard" });
   }
 };
