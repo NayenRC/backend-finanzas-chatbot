@@ -63,3 +63,47 @@ export const login = async (req, res) => {
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
+
+export const register = async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        message: 'Email y password requeridos'
+      });
+    }
+
+    // 1️⃣ Crear usuario en Supabase Auth
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password
+    });
+
+    if (error || !data.user) {
+      return res.status(400).json({
+        message: error?.message || 'Error al registrar usuario'
+      });
+    }
+
+    const supabaseUser = data.user;
+
+    // 2️⃣ Crear perfil en tabla usuario
+    await Usuario.query().insert({
+      user_id: supabaseUser.id,
+      email: supabaseUser.email,
+      nombre: name || email.split('@')[0],
+      activo: true
+    });
+
+    return res.status(201).json({
+      message: 'Usuario registrado correctamente'
+    });
+
+  } catch (err) {
+    console.error('🔥 Register error:', err);
+    return res.status(500).json({
+      message: 'Error interno del servidor'
+    });
+  }
+};
