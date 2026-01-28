@@ -7,7 +7,7 @@ import 'dotenv/config';
 import db from './config/db.js';
 import router from './routes/index.js';
 import telegramRoutes from './routes/telegramRoutes.js';
-import { startBot } from './bot/telegramBot.js';
+
 
 // --- CONECTAR OBJECTION ---
 Model.knex(db);
@@ -32,10 +32,6 @@ app.use('/api', router);
 // =====================
 app.use(telegramRoutes);
 
-// =====================
-// 🔥 INICIAR BOT (UNA SOLA VEZ)
-// =====================
-await startBot(app);
 
 // =====================
 // Iniciar servidor
