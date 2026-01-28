@@ -1,6 +1,8 @@
 import jwt from 'jsonwebtoken';
-import { supabase } from '../services/supabaseService.js';
 import Usuario from '../models/Usuario.js';
+import supabaseService from '../services/supabaseService.js';
+
+const { supabase } = supabaseService;
 
 export const login = async (req, res) => {
   try {
