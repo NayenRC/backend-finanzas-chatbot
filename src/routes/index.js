@@ -1,14 +1,14 @@
 import { Router } from "express";
 
-import authRoutes from "./auth.routes.js";
-import usuariosRoutes from "./usuarios.routes.js";
-import gastosRoutes from "./gastos.routes.js";
-import ingresosRoutes from "./ingresos.routes.js";
-import metasRoutes from "./metas.routes.js";
-import movimientosRoutes from "./movimientos.routes.js";
-import mensajesRoutes from "./mensajes.routes.js";
-import consejosRoutes from "./consejos.routes.js";
-import dashboardRoutes from "./dashboard.routes.js";
+import authRoutes from "./authRoutes.js";
+import usuariosRoutes from "./usuariosRoutes.js";
+import gastosRoutes from "./gastosRoutes.js";
+import ingresosRoutes from "./ingresosRoutes.js";
+import metasRoutes from "./metasRoutes.js";
+import movimientosRoutes from "./movimientosRoutes.js";
+import mensajesRoutes from "./mensajesRoutes.js";
+import consejosRoutes from "./consejosRoutes.js";
+import dashboardRoutes from "./dashboardRoutes.js";
 
 const router = Router();
 
