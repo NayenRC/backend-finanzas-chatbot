@@ -1,21 +1,22 @@
-import { Router } from 'express';
+import { Router } from "express";
+import {
+  index,
+  show,
+  store,
+  update,
+  destroy,
+} from "../controllers/GastoController.js";
+import { authenticateToken } from "../middlewares/authMiddleware.js";
+
 const router = Router();
 
-// Registrar gasto
-router.post('/', (req, res) => {
-  const { monto, descripcion, fecha } = req.body;
+router.use(authenticateToken);
 
-  if (!monto || !descripcion) {
-    return res.status(400).json({ error: 'Datos incompletos' });
-  }
-
-  return res.json({
-    ok: true,
-    tipo: 'gasto',
-    monto,
-    descripcion,
-    fecha,
-  });
-});
+router.get("/", index);
+router.get("/:id", show);
+router.post("/", store);
+router.put("/:id", update);
+router.delete("/:id", destroy);
+router.get("/usuario/:userId", index);
 
 export default router;

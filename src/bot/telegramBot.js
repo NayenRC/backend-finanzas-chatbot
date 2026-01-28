@@ -4,16 +4,54 @@ import aiChatCommand from '../commands/aiChatCommand.js';
 import Usuario from '../models/Usuario.js';
 
 // 🔐 Validaciones
-if (!process.env.TELEGRAM_BOT_TOKEN) {
-  throw new Error('❌ TELEGRAM_BOT_TOKEN no definido');
+const token = process.env.TELEGRAM_BOT_TOKEN_DEV || process.env.TELEGRAM_BOT_TOKEN;
+
+if (!token) {
+  throw new Error('❌ TELEGRAM_BOT_TOKEN (ni DEV) no definido');
 }
 
 console.log('🤖 Iniciando SmartFin Telegram Bot (AI Mode)...');
 
-// 🤖 Crear bot
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
-  polling: true,
+// 🤖 Crear bot inicializado sin polling automático
+export const bot = new TelegramBot(token, {
+  polling: false,
 });
+
+const BOT_MODE = process.env.BOT_MODE || 'polling';
+
+export async function startBot() {
+  console.log(`🤖 Iniciando Bot en modo: ${BOT_MODE.toUpperCase()}`);
+
+  try {
+    if (BOT_MODE === 'webhook') {
+      // Modo Webhook (Producción)
+      const webhookUrl = process.env.WEBHOOK_URL;
+      if (!webhookUrl) {
+        throw new Error('❌ WEBHOOK_URL es requerido en modo webhook');
+      }
+
+      await bot.setWebHook(webhookUrl);
+      console.log(`✅ Webhook establecido en: ${webhookUrl}`);
+
+    } else {
+      // Modo Polling (Local / Default)
+      // 🔥 CRÍTICO: Eliminar webhook previo para evitar conflictos 409
+      await bot.deleteWebHook();
+      console.log('✅ Webhook eliminado para polling seguro');
+
+      await bot.startPolling({
+        restart: true
+      });
+      console.log('✅ Bot escuchando (Polling)...');
+    }
+  } catch (error) {
+    console.error('❌ Error fatal iniciando el bot:', error);
+  }
+}
+
+// Cierre limpio
+process.once('SIGINT', () => bot.stopPolling());
+process.once('SIGTERM', () => bot.stopPolling());
 
 // Mapeo de chatId a userId (en memoria)
 const userSessions = new Map();

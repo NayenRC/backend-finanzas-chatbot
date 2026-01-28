@@ -12,7 +12,7 @@ import dashboardRoutes from "./dashboardRoutes.js";
 
 const router = Router();
 
-router.use("/auth", authRoutes);
+router.use("/", authRoutes);
 router.use("/usuarios", usuariosRoutes);
 router.use("/gastos", gastosRoutes);
 router.use("/ingresos", ingresosRoutes);
