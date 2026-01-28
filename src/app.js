@@ -5,7 +5,7 @@ import { Model } from 'objection'; // <--- IMPORTANTE: Importar Model
 import 'dotenv/config';
 
 import db from './config/db.js';     // <--- IMPORTANTE: Importar la conexión
-import router from './routes/router.js';
+import router from './routes/index.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 // import finanzasRoutes from './routes/finanzas.routes.js';
 import './bot/telegramBot.js'; // Asegura que el bot de Telegram se inicie

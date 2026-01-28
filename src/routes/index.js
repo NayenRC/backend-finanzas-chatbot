@@ -8,6 +8,7 @@ import metasRoutes from "./metasRoutes.js";
 import movimientosRoutes from "./movimientosRoutes.js";
 import mensajesRoutes from "./mensajesRoutes.js";
 import consejosRoutes from "./consejosRoutes.js";
+import categoriasRoutes from "./categoriasRoutes.js";
 import dashboardRoutes from "./dashboardRoutes.js";
 
 const router = Router();
@@ -20,6 +21,7 @@ router.use("/metas", metasRoutes);
 router.use("/movimientos", movimientosRoutes);
 router.use("/mensajes", mensajesRoutes);
 router.use("/consejos", consejosRoutes);
+router.use("/categorias", categoriasRoutes);
 router.use("/dashboard", dashboardRoutes);
 
 router.get("/", (req, res) => {

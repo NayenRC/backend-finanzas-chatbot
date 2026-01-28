@@ -6,6 +6,7 @@ import {
   update,
   destroy,
 } from "../controllers/MetaAhorroController.js";
+import { index as movIndex } from "../controllers/MovimientoAhorroController.js";
 import { authenticateToken } from "../middlewares/authMiddleware.js";
 
 const router = Router();
@@ -18,5 +19,8 @@ router.post("/", store);
 router.put("/:id", update);
 router.delete("/:id", destroy);
 router.get("/usuario/:userId", index);
+
+// Movimientos por meta
+router.get("/:metaId/movimientos", movIndex);
 
 export default router;
