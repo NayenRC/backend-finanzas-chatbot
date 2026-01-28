@@ -2,10 +2,9 @@ import Categoria from '../models/Categoria.js';
 
 export const index = async (req, res) => {
     try {
-        const { userId } = req.params;
-
         // Si viene userId param o tenemos el usuario en req.user
-        const idToSearch = userId || (req.user ? req.user.id : null);
+        const userIdFromParams = req.params.userId;
+        const idToSearch = userIdFromParams || (req.user ? (req.user.id || req.user.user_id) : null);
 
         if (idToSearch) {
             const categorias = await Categoria.findByUser(idToSearch);
@@ -42,8 +41,8 @@ export const store = async (req, res) => {
         const data = req.body;
 
         // Asignar usuario si está disponible
-        if (req.user && req.user.id) {
-            data.user_id = req.user.id;
+        if (req.user && (req.user.id || req.user.user_id)) {
+            data.user_id = req.user.id || req.user.user_id;
         }
 
         if (!data.nombre || !data.tipo) {

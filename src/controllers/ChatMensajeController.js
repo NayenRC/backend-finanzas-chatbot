@@ -3,9 +3,10 @@ import ChatMensaje from '../models/ChatMensaje.js';
 export const index = async (req, res) => {
   try {
     const { userId } = req.params;
+    const idToSearch = userId || (req.user ? (req.user.id || req.user.user_id) : null);
 
-    if (userId) {
-      const mensajesUsuario = await ChatMensaje.findByUser(userId);
+    if (idToSearch) {
+      const mensajesUsuario = await ChatMensaje.findByUser(idToSearch);
       return res.json(mensajesUsuario);
     }
 
@@ -38,12 +39,12 @@ export const store = async (req, res) => {
     const data = req.body;
 
     // 1. Asignar ID desde el token (si existe)
-    if (req.user && req.user.id) {
-        data.user_id = req.user.id;
+    if (req.user && (req.user.id || req.user.user_id)) {
+      data.user_id = req.user.id || req.user.user_id;
     }
 
     // 2. Definir que NO es un mensaje del bot (es del usuario)
-    data.es_bot = false; 
+    data.es_bot = false;
 
     // Validación
     if (!data.user_id || !data.mensaje) {

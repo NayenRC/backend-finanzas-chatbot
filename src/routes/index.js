@@ -10,7 +10,6 @@ import mensajesRoutes from "./mensajesRoutes.js";
 import consejosRoutes from "./consejosRoutes.js";
 import categoriasRoutes from "./categoriasRoutes.js";
 import dashboardRoutes from "./dashboardRoutes.js";
-import TelegramController from "../controllers/TelegramController.js";
 import { authenticateToken } from "../middlewares/authMiddleware.js";
 
 const router = Router();
@@ -26,8 +25,7 @@ router.use("/consejos", consejosRoutes);
 router.use("/categorias", categoriasRoutes);
 router.use("/dashboard", dashboardRoutes);
 
-// Chat route for web frontend (uses same AI as Telegram bot)
-router.post("/chat", authenticateToken, TelegramController.chat);
+// router.get("/", ...
 
 router.get("/", (req, res) => {
   res.json({ message: "Bienvenido a la API Finanzas Chatbot" });

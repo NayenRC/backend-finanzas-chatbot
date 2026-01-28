@@ -19,7 +19,11 @@ const PORT = process.env.PORT || 3000;
 
 // =====================
 // Middlewares
-app.use(cors());
+// Middlewares
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+  credentials: true
+}));
 app.use(morgan('dev'));
 app.use(express.json());
 

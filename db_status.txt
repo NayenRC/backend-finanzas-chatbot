@@ -1,0 +1,6 @@
+TABLES_START
+["knex_migrations","knex_migrations_lock","users","articles","usuario","categoria","gasto","ingreso","meta_ahorro","movimiento_ahorro","chat_mensaje","consejo_financiero"]
+TABLES_END
+COLUMNS_USUARIO_START
+["user_id","nombre","moneda","telefono","telegram_user_id","activo","creado_en","email","password","telegram_id","reset_password_token","reset_password_expires"]
+COLUMNS_USUARIO_END

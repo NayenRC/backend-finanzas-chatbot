@@ -5,7 +5,7 @@ import Ingreso from '../models/Ingreso.js';
  */
 export const index = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user.user_id;
 
     const ingresos = await Ingreso.findByUser(userId);
     res.json(ingresos);
@@ -20,7 +20,7 @@ export const index = async (req, res) => {
  */
 export const show = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user.user_id;
     const { id } = req.params;
 
     const ingreso = await Ingreso.findByIdAndUser(id, userId);
@@ -41,7 +41,7 @@ export const show = async (req, res) => {
  */
 export const store = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user.user_id;
     const { monto, descripcion, fecha } = req.body;
 
     if (!monto || !fecha) {
@@ -69,7 +69,7 @@ export const store = async (req, res) => {
  */
 export const update = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user.user_id;
     const { id } = req.params;
     const data = req.body;
 
@@ -91,7 +91,7 @@ export const update = async (req, res) => {
  */
 export const destroy = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.id || req.user.user_id;
     const { id } = req.params;
 
     const deleted = await Ingreso.deleteByUser(id, userId);

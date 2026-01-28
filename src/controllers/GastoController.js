@@ -2,10 +2,8 @@ import Gasto from '../models/Gasto.js';
 
 export const index = async (req, res) => {
   try {
-    // Si viene userId como parámetro, filtra por usuario
-    const { userId } = req.params;
-    const { monto, descripcion } = req.body;
-
+    // 1. Usar ID del usuario autenticado
+    const userId = req.user.id || req.user.user_id;
 
     if (userId) {
       const gastosPorUsuario = await Gasto.findByUser(userId);
@@ -23,8 +21,9 @@ export const index = async (req, res) => {
 
 export const show = async (req, res) => {
   try {
+    const userId = req.user.id || req.user.user_id;
     const { id } = req.params;
-    const gasto = await Gasto.find(id);
+    const gasto = await Gasto.findByIdAndUser(id, userId);
 
     if (!gasto) {
       return res.status(404).json({ message: 'Gasto no encontrado' });
@@ -44,8 +43,8 @@ export const store = async (req, res) => {
 
     // 2. ¡MAGIA! Asignamos el ID del usuario logueado automáticamente
     // (req.user viene del token gracias a tu middleware de seguridad)
-    if (req.user && req.user.id) {
-        data.user_id = req.user.id;
+    if (req.user && (req.user.id || req.user.user_id)) {
+      data.user_id = req.user.id || req.user.user_id;
     }
 
     // Validación mínima
@@ -63,10 +62,11 @@ export const store = async (req, res) => {
 
 export const update = async (req, res) => {
   try {
+    const userId = req.user.id || req.user.user_id;
     const { id } = req.params;
     const data = req.body;
 
-    const updatedGasto = await Gasto.update(id, data);
+    const updatedGasto = await Gasto.updateByUser(id, userId, data);
 
     if (!updatedGasto) {
       return res.status(404).json({ message: 'Gasto no encontrado' });
@@ -81,8 +81,14 @@ export const update = async (req, res) => {
 
 export const destroy = async (req, res) => {
   try {
+    const userId = req.user.id || req.user.user_id;
     const { id } = req.params;
-    await Gasto.delete(id);
+    const deleted = await Gasto.deleteByUser(id, userId);
+
+    if (!deleted) {
+      return res.status(404).json({ message: 'Gasto no encontrado' });
+    }
+
     res.json({ message: 'Gasto eliminado correctamente' });
   } catch (error) {
     console.error(error);
