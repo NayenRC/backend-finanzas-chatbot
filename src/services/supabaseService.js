@@ -112,7 +112,7 @@ async function createIncome(userId, incomeData) {
  * Get categories by type (GASTO, INGRESO, AHORRO)
  */
 async function getCategories(type = null) {
-    let query = db('categorias').where('activo', true);
+    let query = db('categorias');
 
     if (type) {
         query = query.where('tipo', type);
@@ -126,7 +126,6 @@ async function getCategories(type = null) {
  */
 async function findCategoryByName(name, type = 'GASTO') {
     const categories = await db('categorias')
-        .where('activo', true)
         .where('tipo', type)
         .whereRaw('LOWER(nombre) = ?', [name.toLowerCase()]);
 

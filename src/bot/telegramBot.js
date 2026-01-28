@@ -3,92 +3,76 @@ import TelegramBot from 'node-telegram-bot-api';
 import aiChatCommand from '../commands/aiChatCommand.js';
 import Usuario from '../models/Usuario.js';
 
-// 🔐 Validaciones
 if (!process.env.TELEGRAM_BOT_TOKEN) {
   throw new Error('❌ TELEGRAM_BOT_TOKEN no definido');
 }
 
-console.log('🤖 Iniciando SmartFin Telegram Bot (AI Mode)...');
+let bot;
 
-// 🤖 Crear bot
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
-  polling: true,
-});
+// 👇 EVITA DOBLE INICIALIZACIÓN
+if (global.telegramBot) {
+  console.log('⚠️ Bot ya iniciado, reutilizando instancia');
+  bot = global.telegramBot;
+} else {
+  console.log('🤖 Iniciando SmartFin Telegram Bot (AI Mode)...');
 
-// Mapeo de chatId a userId (en memoria)
-const userSessions = new Map();
+  bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
+    polling: true,
+  });
 
-console.log('✅ SmartFin Telegram Bot activo (Modo Conversacional AI)');
+  global.telegramBot = bot;
 
-/**
- * Auto-login: Encuentra o crea usuario basado en telegram_id
- */
-async function ensureUser(telegramUser) {
-  const telegramId = String(telegramUser.id);
+  console.log('✅ SmartFin Telegram Bot activo (Modo Conversacional AI)');
 
-  // Buscar usuario existente
-  let usuario = await Usuario.query().findOne({ telegram_id: telegramId });
+  // ===== TU CÓDIGO ACTUAL =====
+  const userSessions = new Map();
 
-  // Si no existe, crear uno nuevo
-  if (!usuario) {
-    console.log(`✨ Creando nuevo usuario: ${telegramUser.first_name} (${telegramId})`);
-    usuario = await Usuario.query().insert({
-      telegram_id: telegramId,
-      nombre: telegramUser.first_name || telegramUser.username || 'Usuario Telegram',
-      activo: true
-    });
+  async function ensureUser(telegramUser) {
+    const telegramId = String(telegramUser.id);
+
+    let usuario = await Usuario.query().findOne({ telegram_id: telegramId });
+
+    if (!usuario) {
+      usuario = await Usuario.query().insert({
+        telegram_id: telegramId,
+        nombre: telegramUser.first_name || telegramUser.username || 'Usuario Telegram',
+        activo: true,
+      });
+    }
+
+    return usuario.user_id;
   }
 
-  return usuario.user_id;
+  bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const text = msg.text;
+    if (!text) return;
+
+    try {
+      let userId = userSessions.get(chatId);
+
+      if (!userId) {
+        userId = await ensureUser(msg.from);
+        userSessions.set(chatId, userId);
+      }
+
+      await bot.sendChatAction(chatId, 'typing');
+
+      const result = await aiChatCommand.processMessage(userId, text);
+
+      let cleanResponse = result.response
+        .replace(/####+\s*/g, '')
+        .replace(/\*\*\*\*/g, '**');
+
+      await bot.sendMessage(chatId, cleanResponse, { parse_mode: 'Markdown' });
+
+    } catch (error) {
+      console.error('❌ ERROR:', error);
+      bot.sendMessage(chatId, '❌ Error procesando tu mensaje.');
+    }
+  });
+
+  console.log('💬 Bot listo para recibir mensajes');
 }
 
-/**
- * UNIVERSAL MESSAGE HANDLER
- * Procesa TODOS los mensajes con IA (sin comandos)
- */
-bot.on('message', async (msg) => {
-  const chatId = msg.chat.id;
-  const text = msg.text;
-
-  // Ignorar mensajes sin texto
-  if (!text) {
-    return;
-  }
-
-  try {
-    // Auto-login: Obtener o crear usuario
-    let userId = userSessions.get(chatId);
-
-    if (!userId) {
-      userId = await ensureUser(msg.from);
-      userSessions.set(chatId, userId);
-      console.log(`👤 Usuario ${userId} conectado al chat ${chatId}`);
-    }
-
-    // Notificar que el bot está "escribiendo..."
-    bot.sendChatAction(chatId, 'typing');
-
-    // Procesar mensaje con AI Commandd
-    const result = await aiChatCommand.processMessage(userId, text);
-
-    // Limpiar símbolos ### que Telegram no soporta
-    let cleanResponse = result.response
-      .replace(/####+\s*/g, '')  // Eliminar ### y ####
-      .replace(/\*\*\*\*/g, '**'); // Convertir **** a **
-
-    // Enviar respuesta con formato Markdown
-    try {
-      await bot.sendMessage(chatId, cleanResponse, { parse_mode: 'Markdown' });
-    } catch (err) {
-      // Si Markdown falla (caracteres especiales), enviar texto plano
-      console.log('⚠️ Markdown falló, enviando texto plano...');
-      await bot.sendMessage(chatId, cleanResponse);
-    }
-
-  } catch (error) {
-    console.error('❌ ERROR procesando mensaje:', error);
-    bot.sendMessage(chatId, '❌ Lo siento, tuve un problema procesando tu mensaje. Por favor intenta de nuevo.');
-  }
-});
-
-console.log('💬 Bot listo para recibir mensajes conversacionales');
+export default bot;
