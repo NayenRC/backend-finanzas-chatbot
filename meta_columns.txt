@@ -1,0 +1,11 @@
+--- Columns for meta_ahorro ---
+- id_meta (bigint)
+- user_id (uuid)
+- categoria_id (bigint)
+- nombre (character varying)
+- monto_objetivo (numeric)
+- monto_actual (numeric)
+- fecha_inicio (date)
+- fecha_fin (date)
+- estado (character varying)
+- creado_en (timestamp with time zone)
