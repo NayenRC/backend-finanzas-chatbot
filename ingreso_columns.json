@@ -1,0 +1,44 @@
+{
+  "id_ingreso": {
+    "type": "bigint",
+    "maxLength": null,
+    "nullable": false,
+    "defaultValue": null
+  },
+  "user_id": {
+    "type": "uuid",
+    "maxLength": null,
+    "nullable": true,
+    "defaultValue": null
+  },
+  "categoria_id": {
+    "type": "bigint",
+    "maxLength": null,
+    "nullable": true,
+    "defaultValue": null
+  },
+  "monto": {
+    "type": "numeric",
+    "maxLength": null,
+    "nullable": false,
+    "defaultValue": null
+  },
+  "descripcion": {
+    "type": "text",
+    "maxLength": null,
+    "nullable": true,
+    "defaultValue": null
+  },
+  "fecha": {
+    "type": "date",
+    "maxLength": null,
+    "nullable": false,
+    "defaultValue": null
+  },
+  "creado_en": {
+    "type": "timestamp with time zone",
+    "maxLength": null,
+    "nullable": true,
+    "defaultValue": "now()"
+  }
+}
