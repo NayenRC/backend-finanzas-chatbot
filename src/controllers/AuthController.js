@@ -1,6 +1,11 @@
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcrypt';
+import crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 import Usuario from '../models/Usuario.js';
 import supabaseService from '../services/supabaseService.js';
+import emailService from '../services/emailService.js';
+
 const { supabase } = supabaseService;
 class AuthController {
   // ... (previous methods)
@@ -222,14 +227,16 @@ class AuthController {
 
       if (error) {
         console.log('❌ Supabase Auth Error:', error.message);
+
+        const errorMsg = error.message || '';
         let message = 'Credenciales inválidas';
 
-        if (error.message.includes('Email not confirmed')) {
+        if (errorMsg.includes('Email not confirmed')) {
           message = 'Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.';
-        } else if (error.message.includes('Invalid login credentials')) {
+        } else if (errorMsg.includes('Invalid login credentials')) {
           message = 'Email o contraseña incorrectos.';
         } else {
-          message = error.message;
+          message = errorMsg || 'Error desconocido al iniciar sesión';
         }
 
         return res.status(401).json({ message });

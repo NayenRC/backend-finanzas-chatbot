@@ -10,7 +10,7 @@ export default {
     connection: {
       connectionString: process.env.DATABASE_URL,
       // Agregamos esto por si Supabase requiere SSL (muy común)
-      ssl: process.env.DATABASE_URL.includes('supabase') ? { rejectUnauthorized: false } : false,
+      ssl: (process.env.DATABASE_URL && process.env.DATABASE_URL.includes('supabase')) ? { rejectUnauthorized: false } : false,
     },
     migrations: {
       directory: './src/migrations',
