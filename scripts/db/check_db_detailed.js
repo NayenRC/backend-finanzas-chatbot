@@ -1,4 +1,4 @@
-import db from './src/config/db.js';
+import db from '../../src/config/db.js';
 import { Model } from 'objection';
 
 Model.knex(db);

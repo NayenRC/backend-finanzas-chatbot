@@ -116,7 +116,9 @@ class AuthController {
         return res.status(400).json({ message: 'Todos los campos son requeridos' });
       }
 
-      const existingUser = await Usuario.query().findOne({ email });
+      const normalizedEmail = email.toLowerCase().trim();
+
+      const existingUser = await Usuario.query().findOne({ email: normalizedEmail });
       if (existingUser) {
         return res.status(400).json({ message: 'El email ya está registrado' });
       }
@@ -128,7 +130,7 @@ class AuthController {
       const newUser = await Usuario.query().insert({
         user_id: uuidv4(),
         nombre: name,
-        email: email,
+        email: normalizedEmail,
         password: hashedPassword,
         moneda: 'CLP',
         activo: true
@@ -192,21 +194,31 @@ class AuthController {
     try {
       const { email, password } = req.body;
 
+      const normalizedEmail = email ? email.toLowerCase().trim() : '';
+
       // 1. Buscar usuario por email
-      const user = await Usuario.query().findOne({ email });
+      console.log('🔍 Intentando login para:', normalizedEmail);
+      const user = await Usuario.query().findOne({ email: normalizedEmail });
 
       if (!user) {
+        console.log('❌ Usuario no encontrado:', email);
         return res.status(401).json({ message: 'Credenciales inválidas' });
       }
 
+      console.log('✅ Usuario encontrado. Verificando contraseña...');
+      console.log('   Hash en DB (primeros 10):', user.password ? user.password.substring(0, 10) : 'null');
+      console.log('   Pass recibida length:', password ? password.length : 0);
+
       // 2. Verificar contraseña
       const isValidPassword = await bcrypt.compare(password, user.password);
+      console.log('   ¿Password válida?:', isValidPassword);
 
       if (!isValidPassword) {
         return res.status(401).json({ message: 'Credenciales inválidas' });
       }
 
       // 3. Generar token
+      console.log('✅ Generando token para:', email);
       const token = jwt.sign(
         { id: user.user_id, email: user.email },
         process.env.JWT_SECRET || 'secret_key',

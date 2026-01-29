@@ -1,5 +1,5 @@
-import db from './src/config/db.js';
-import Usuario from './src/models/Usuario.js';
+import db from '../../src/config/db.js';
+import Usuario from '../../src/models/Usuario.js';
 import { Model } from 'objection';
 
 Model.knex(db);
