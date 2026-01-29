@@ -34,7 +34,10 @@ app.use(cors({
     // Permitir requests sin origin (como mobile apps o curl)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // Permitir dominios de Vercel dinámicamente
+    const isVercel = origin.endsWith('.vercel.app');
+
+    if (allowedOrigins.indexOf(origin) !== -1 || isVercel) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
