@@ -222,7 +222,17 @@ class AuthController {
 
       if (error) {
         console.log('❌ Supabase Auth Error:', error.message);
-        return res.status(401).json({ message: 'Credenciales inválidas' });
+        let message = 'Credenciales inválidas';
+
+        if (error.message.includes('Email not confirmed')) {
+          message = 'Debes confirmar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.';
+        } else if (error.message.includes('Invalid login credentials')) {
+          message = 'Email o contraseña incorrectos.';
+        } else {
+          message = error.message;
+        }
+
+        return res.status(401).json({ message });
       }
 
       const supabaseUser = data.user;
