@@ -14,7 +14,7 @@ class MetaAhorro extends Model {
   static async findByUser(user_id) {
     return db(this.tableName)
       .where('user_id', user_id)
-      .orderBy('created_at', 'desc');
+      .orderBy('creado_en', 'desc'); // Corregido según schema dump
   }
 
   static async findByIdAndUser(id, user_id) {

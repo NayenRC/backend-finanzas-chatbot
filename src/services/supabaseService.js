@@ -216,14 +216,14 @@ async function getExpensesByCategory(userId, filters = {}) {
     const { startDate, endDate } = filters;
 
     let query = db('gasto')
-        .join('categoria', 'gasto.categoria_id', 'categoria.id_categoria')
+        .join('categorias', 'gasto.categoria_id', 'categorias.id_categoria')
         .where('gasto.user_id', userId)
         .select(
-            'categoria.nombre as categoria',
+            'categorias.nombre as categoria',
             db.raw('COUNT(*) as cantidad'),
             db.raw('SUM(gasto.monto) as total')
         )
-        .groupBy('categoria.id_categoria', 'categoria.nombre');
+        .groupBy('categorias.id_categoria', 'categorias.nombre');
 
     if (startDate) {
         query = query.where('gasto.fecha', '>=', startDate);
