@@ -110,6 +110,62 @@ Si el mensaje es demasiado ambiguo, responde:
 }
 
 /**
+ * Classify and extract income data from natural language (supports Chilean slang)
+ */
+async function classifyIncome(userMessage, categories = []) {
+    const categoryList = categories.map(c => c.nombre).join(', ');
+
+    const systemPrompt = `Eres un asistente especializado en finanzas personales.
+Tu tarea es analizar un mensaje del usuario y determinar si contiene un INGRESO.
+Extrae la información en formato JSON ESTRICTO, sin texto adicional.
+
+Reglas importantes:
+- El monto debe devolverse SIEMPRE como un número entero en pesos chilenos (CLP).
+- Convierte expresiones como:
+  - "100 lucas" → 100000
+  - "2 palos" → 2000000
+  - "1.5 millones" → 1500000
+- Si el monto no está claro, indícalo en "info_faltante".
+- No inventes datos.
+- Usa solo categorías de la lista: ${categoryList || 'Salario, Ventas, Otros'}
+
+Formato de respuesta OBLIGATORIO:
+{
+  "monto": number | null,
+  "descripcion": string | null,
+  "categoria": string | null,
+  "info_faltante": string[],
+  "error": boolean,
+  "sugerencia": string | null
+}
+
+Criterios:
+- Si el mensaje contiene claramente un ingreso: error = false
+- Si NO se puede confirmar un ingreso: error = true y sugerencia clara y corta.`;
+
+    const messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userMessage }
+    ];
+
+    try {
+        const response = await sendMessage(messages, { temperature: 0.1 });
+        const jsonMatch = response.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error('Respuesta de IA no es JSON');
+
+        const data = JSON.parse(jsonMatch[0]);
+        // Para compatibilidad con la lógica existente que usa data.error como string
+        if (data.error === true) data.error = data.sugerencia || 'No se pudo identificar el ingreso';
+        else if (data.error === false) delete data.error;
+
+        return data;
+    } catch (error) {
+        console.error('❌ Error clasificando ingreso:', error);
+        return { error: 'Lo siento, no pude procesar tu ingreso. ¿Podrías intentar de nuevo con más detalles?' };
+    }
+}
+
+/**
  * Generate a natural language response based on expense data
  */
 async function generateQueryResponse(userMessage, expenseData, chatHistory = []) {

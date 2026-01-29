@@ -122,7 +122,7 @@ async function handleIncomeRecording(userId, userMessage) {
         const categories = await supabaseService.getCategories('INGRESO');
 
         // Use AI to extract income data
-        const incomeData = await openRouterService.classifyExpense(userMessage, categories);
+        const incomeData = await openRouterService.classifyIncome(userMessage, categories);
 
         if (incomeData.error) {
             return `¡Hola! 👋 ${incomeData.sugerencia || 'Para registrar un ingreso, necesito saber el monto y de dónde proviene. ¿Me podrías dar más detalles?'}`;
