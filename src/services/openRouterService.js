@@ -271,6 +271,7 @@ Cuando el usuario te salude o te hable:
 export default {
     sendMessage,
     classifyExpense,
+    classifyIncome,
     generateQueryResponse,
     analyzeIntent,
     generateGeneralResponse,
