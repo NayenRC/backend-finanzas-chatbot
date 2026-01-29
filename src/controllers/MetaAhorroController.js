@@ -46,8 +46,12 @@ export const store = async (req, res) => {
     }
 
     // Validación mínima
-    if (!data.user_id || !data.nombre || !data.monto_objetivo) {
-      return res.status(400).json({ message: 'Faltan campos obligatorios' });
+    // Convertir a número si es string
+    data.monto_objetivo = parseFloat(data.monto_objetivo);
+    data.monto_actual = parseFloat(data.monto_actual || 0);
+
+    if (!data.user_id || !data.nombre || isNaN(data.monto_objetivo)) {
+      return res.status(400).json({ message: 'Faltan campos obligatorios o monto inválido' });
     }
 
     const newMeta = await MetaAhorro.create(data);

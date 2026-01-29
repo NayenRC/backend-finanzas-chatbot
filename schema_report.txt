@@ -1,0 +1,17 @@
+SCHEMA DUMP
+============
+
+TABLE: gasto
+id_gasto, user_id, categoria_id, monto, descripcion, fecha, creado_en
+
+TABLE: ingreso
+id_ingreso, user_id, categoria_id, monto, descripcion, fecha, creado_en
+
+TABLE: meta_ahorro
+id_meta, user_id, categoria_id, nombre, monto_objetivo, monto_actual, fecha_inicio, fecha_fin, estado, creado_en
+
+TABLE: categorias
+id_categoria, nombre, tipo, user_id, created_at, updated_at
+
+TABLE: usuario
+user_id, nombre, moneda, telefono, telegram_user_id, activo, creado_en, email, password, telegram_id, reset_password_token, reset_password_expires

@@ -58,7 +58,7 @@ class Dashboard {
         const { startDate, endDate } = filters;
 
         let query = db('gasto')
-            .join('categorias', 'gasto.categoria_id', 'categorias.id_categoria')
+            .leftJoin('categorias', 'gasto.categoria_id', 'categorias.id_categoria')
             .where('gasto.user_id', userId)
             .select(
                 'categorias.nombre as categoria',
