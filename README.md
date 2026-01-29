@@ -1,145 +1,148 @@
-# Proyecto Base Backend Educativo
+📊 Backend Finanzas Chatbot
 
-Este repositorio contiene un proyecto base para desarrollar un backend robusto y moderno utilizando Node.js 24, Express, Knex.js y PostgreSQL (Supabase). Incluye integración con Inteligencia Artificial a través de OpenRouter.
+Un backend moderno y educativo para construir APIs de chatbot financiero, construido con Node.js 24, Express, Knex.js y PostgreSQL (Supabase), con integración opcional de IA a través de OpenRouter para capacidades inteligentes.
 
-## 📋 Requisitos Previos
+🧠 ✨ ¿Qué es este proyecto?
 
-- **Node.js**: Versión 24 o superior recomendada.
-- **Base de Datos**: Una instancia de PostgreSQL. Recomendamos [Supabase](https://supabase.com/) por su facilidad de uso.
-- **OpenRouter (Opcional)**: Una API Key de [OpenRouter](https://openrouter.ai/) para probar la funcionalidad de IA.
+Este repositorio es un proyecto base de backend pensado para servir como estructura inicial de APIs que gestionen datos financieros y ofrezcan respuestas inteligentes mediante IA. Permite:
 
-## 🚀 Instalación Paso a Paso
+Servir rutas REST para recursos financieros.
 
-### 1. Clonar y Preparar
+Integrarse con bases de datos PostgreSQL (ideal usando Supabase).
 
-Descarga este código y abre la terminal en la carpeta del proyecto.
+Añadir funciones de IA usando OpenRouter (por ejemplo: respuestas automáticas sobre finanzas).
 
-### 2. Instalar Dependencias
+Escalar para chatbots u otros clientes (móviles, web o CLI).
 
-Ejecuta el siguiente comando para instalar las librerías necesarias:
+🚀 Funcionalidades principales
 
-```bash
+📌 Servidor Express
+📌 Gestión de rutas y controladores básicos
+📌 Conexión con PostgreSQL via Knex.js
+📌 Migraciones y seeds para manejo de datos
+📌 Integración opcional con IA (OpenRouter)
+📌 Estructura escalable para nuevos endpoints
+
+🛠️ Tecnologías usadas
+Capa	Tecnología
+Backend	Node.js 24
+Servidor	Express
+ORM/Query Builder	Knex.js
+Base de datos	PostgreSQL (Supabase)
+IA	OpenRouter (opcional)
+Scripts	JavaScript
+📥 Requisitos previos
+
+Antes de comenzar, asegúrate de tener instalado:
+
+✔︎ Node.js 24 o superior
+✔︎ PostgreSQL / Supabase
+✔︎ Variables de entorno configuradas
+
+🧩 Instalación
+
+Clona el repositorio:
+
+git clone https://github.com/NayenRC/backend-finanzas-chatbot.git
+cd backend-finanzas-chatbot
+
+
+Instala dependencias:
+
 npm install
-```
 
-### 3. Configurar Variables de Entorno
 
-1. Duplica el archivo `.env.example` y renómbralo a `.env`.
-2. Abre `.env` y edita las variables:
-   - `DATABASE_URL`: Pega aquí tu cadena de conexión de Supabase (Connection String > URI). Asegúrate de usar la contraseña real de tu base de datos.
-   - `OPENROUTER_API_KEY`: Pega tu API Key si deseas usar la funcionalidad de IA.
+Crea tu archivo .env a partir del ejemplo:
 
-```env
-DATABASE_URL=postgres://postgres:[TU_PASSWORD]@db.[REF].supabase.co:5432/postgres
-```
+cp .env.example .env
 
-### 4. Ejecutar Migraciones
 
-Las migraciones crean las tablas necesarias en tu base de datos.
+Configura las variables en .env:
 
-```bash
+DATABASE_URL=postgres://usuario:contraseña@host:puerto/dbname
+OPENROUTER_API_KEY=tu_api_key_openrouter   # opcional
+
+🗄️ Base de datos y migraciones
+
+Ejecuta las migraciones para crear las tablas iniciales:
+
 npm run db:migrate
-```
 
-_Si tienes errores de conexión, verifica tu DATABASE_URL en el archivo .env_
 
-### 5. (Opcional) Poblar la Base de Datos
+Si quieres datos de ejemplo (seed):
 
-Para tener datos de prueba, puedes ejecutar el script de "seed":
+npm run db:seed
 
-```bash
-npm run command:seed
-```
-
-### 6. Iniciar el Servidor
-
-Para desarrollo (se reinicia automáticamente al guardar cambios):
-
-```bash
+▶️ Ejecutar el servidor
+En modo desarrollo
 npm run dev
-```
 
-Para producción:
-
-```bash
+En producción
 npm start
-```
 
-El servidor iniciará en `http://localhost:3000`.
 
-## 📂 Guía del Código
+Por defecto, el servidor quedará corriendo en:
 
-El proyecto está organizado para ser fácil de entender y escalar:
+http://localhost:3000
 
-### `src/models/`
+📌 Endpoints básicos
 
-Aquí definimos la estructura de nuestros datos.
+GET /health
+Verifica que el servidor esté activo.
 
-- **`Model.js`**: Una clase base que simplifica las consultas a la base de datos (Active Record simplificado).
-- **`Article.js`**: Ejemplo de un modelo que extiende de `Model`. Muestra cómo interactuar con la tabla `articles`.
+POST /api/auth/login
+Login de usuario (si aplica JWT).
 
-### `src/controllers/`
+GET /api/finanzas
+Ejemplo de endpoint de finanzas.
 
-La lógica de negocio. Reciben la petición del usuario y deciden qué hacer.
+POST /api/ia/query
+Ejemplo de ruta que puede usar IA via OpenRouter (requiere la API Key).
 
-- **`ArticleController.js`**: Contiene métodos `index`, `show`, `store`, `update`, `destroy` para gestionar artículos.
+👆 Ajusta estos endpoints según cómo esté estructurado tu código en src/routes/.
 
-### `src/services/`
+🧠 Integración con IA (OpenRouter)
 
-Lógica para conectar con servicios externos.
+Para usar funciones de IA debes:
 
-- **`OpenRouter.js`**: Un servicio dedicado a hablar con la API de OpenRouter. Tiene el método `generateSummary` que envía texto a una IA y devuelve un resumen.
+Conseguir tu API Key de OpenRouter.
 
-### `src/routes/`
+Añadirla en tu .env (ver arriba).
 
-- **`router.js`**: Define las URLs de tu API.
-  - `GET /api/articles` -> Lista artículos
-  - `POST /api/articles` -> Crea artículo
-  - `POST /api/articles/:id/summarize` -> ✨ **Feature IA**: Resume el artículo usando OpenRouter.
+Consumir rutas que hagan llamadas a la API de OpenRouter en tu backend (como en src/services/OpenRouter.js).
 
-### 7. Sistema de Autenticación
+📦 Estructura del proyecto
+├── src/
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   ├── services/
+│   └── app.js
+├── migrations/
+├── seeds/
+├── .env.example
+├── knexfile.js
+├── package.json
+└── README.md
 
-El proyecto incluye un sistema completo de usuarios con JWT.
+🧪 Testing
 
-#### Configuración Extra
+(Opcional — agrega pruebas si las tienes)
 
-Asegúrate de agregar `JWT_SECRET` en tu `.env`:
+npm test
 
-```env
-JWT_SECRET=tu_secreto_super_seguro
-```
+🧭 Contribuciones
 
-#### Endpoints de Autenticación
+¡Contribuciones bienvenidas!
 
-- `POST /api/register`: Crear cuenta (requiere `name`, `email`, `password`).
-- `POST /api/login`: Iniciar sesión (requiere `email`, `password`). Retorna un token.
-- `GET /api/profile`: Ruta protegida. Requiere header `Authorization: Bearer <TOKEN>`.
+Haz un fork del proyecto
 
-### 8. Comandos Útiles
+Crea tu feature branch (git checkout -b feature/nueva-funcion)
 
-- **Crear migración**: `npx knex migrate:make nombre_migracion`
-- **Correr migraciones**: `npm run db:migrate`
-- **Poblar DB (Seeds)**: `npm run db:seed` (Crea usuarios de prueba: admin@example.com / 123456)
+Haz commit de tus cambios
 
-## 📂 Guía del Código
+Abre un Pull Request 🚀
 
-Puedes usar Postman o cURL.
+📄 Licencia
 
-**Crear un artículo:**
-
-```bash
-curl -X POST http://localhost:3000/api/articles \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Mi primer post", "content": "Este es un contenido muy largo que la IA va a resumir...", "author": "Yo"}'
-```
-
-**Resumir un artículo con IA:**
-
-```bash
-# Reemplaza :id con el ID del artículo creado
-curl -X POST http://localhost:3000/api/articles/1/summarize
-```
-
----
-
-¡Diviértete aprendiendo! 🚀
+Este proyecto está bajo licencia MIT — ver archivo LICENSE.
