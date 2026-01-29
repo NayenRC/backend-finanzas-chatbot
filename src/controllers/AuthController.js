@@ -108,82 +108,33 @@ class AuthController {
     }
   }
 
-  static async register(req, res) {
-    try {
-      // 1. Recibir datos (usamos 'nombre' para coincidir con tu DB, o lo mapeamos abajo)
-      const { name, email, password } = req.body;
-
-export const login = async (req, res) => {
+static async register(req, res) {
   try {
-    const { email, password } = req.body;
+    // 1. Recibir datos (usamos 'nombre' para coincidir con tu DB, o lo mapeamos abajo)
+    const { name, email, password } = req.body;
 
-      // 2. Verificar si el usuario ya existe
-      // Nota: Objection usa .query().findOne()
-      const existingUser = await Usuario.query().findOne({ email });
+    // 2. Verificar si el usuario ya existe
+    // Nota: Objection usa .query().findOne()
+    const existingUser = await Usuario.query().findOne({ email });
 
-      if (existingUser) {
-        return res.status(400).json({ message: 'El usuario ya existe' });
-      }
-
-    // 1️⃣ Autenticación REAL con Supabase
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    });
-
-    if (error || !data.user) {
-      return res.status(401).json({ message: 'Credenciales inválidas' });
+    if (existingUser) {
+      return res.status(400).json({ message: 'El usuario ya existe' });
     }
 
-    const supabaseUser = data.user;
+    // Aquí podrías agregar la lógica para registrar el usuario
+    // ...
 
-    // 2️⃣ Buscar perfil en tabla usuario
-    let perfil = await Usuario.query()
-      .findOne({ email: supabaseUser.email });
-
-      // 1. Buscar usuario por email
-      const user = await Usuario.query().findOne({ email });
-
-      if (!user) {
-        return res.status(401).json({ message: 'Credenciales inválidas' });
-      }
-
-    // 3️⃣ Crear JWT propio
-    const token = jwt.sign(
-      {
-        id: perfil.user_id,
-        email: perfil.email
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-      // 3. Generar token
-      const token = jwt.sign(
-        { id: user.user_id, email: user.email }, // Usamos user_id
-        process.env.JWT_SECRET || 'secret_key',
-        { expiresIn: '1h' },
-      );
-
-      res.status(200).json({
-        message: 'Login exitoso',
-        user: {
-          id: user.user_id,
-          nombre: user.nombre,
-          email: user.email
-        },
-        token,
-      });
-
-  } catch (err) {
-    console.error('🔥 Login error:', err);
-    res.status(500).json({ message: 'Error interno del servidor' });
+    res.status(201).json({ message: 'Usuario registrado exitosamente' });
+  } catch (error) {
+    console.error('❌ REGISTER ERROR:', error);
+    res.status(500).json({ message: 'Error al registrar usuario' });
   }
-};
+}
 
-  static async getProfile(req, res) {
-    res.json({ message: 'Perfil de usuario protegido', user: req.user });
-  }
+static async getProfile(req, res) {
+  res.json({ message: 'Perfil de usuario protegido', user: req.user });
+}
+
   static async telegramLogin(req, res) {
     try {
       const { telegram_id, username, nombre } = req.body;
@@ -216,6 +167,47 @@ export const login = async (req, res) => {
     } catch (error) {
       console.error('❌ TELEGRAM LOGIN ERROR:', error.message);
       res.status(500).json({ message: 'Error login Telegram' });
+    }
+  }
+
+  static async login(req, res) {
+    try {
+      const { email, password } = req.body;
+
+      // 1. Buscar usuario por email
+      const user = await Usuario.query().findOne({ email });
+
+      if (!user) {
+        return res.status(401).json({ message: 'Credenciales inválidas' });
+      }
+
+      // 2. Verificar contraseña
+      const isValidPassword = await bcrypt.compare(password, user.password);
+
+      if (!isValidPassword) {
+        return res.status(401).json({ message: 'Credenciales inválidas' });
+      }
+
+      // 3. Generar token
+      const token = jwt.sign(
+        { id: user.user_id, email: user.email },
+        process.env.JWT_SECRET || 'secret_key',
+        { expiresIn: '1h' },
+      );
+
+      res.status(200).json({
+        message: 'Login exitoso',
+        user: {
+          id: user.user_id,
+          nombre: user.nombre,
+          email: user.email
+        },
+        token,
+      });
+
+    } catch (err) {
+      console.error('🔥 Login error:', err);
+      res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
 
