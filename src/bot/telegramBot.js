@@ -43,6 +43,9 @@ if (global.telegramBot) {
     return usuario.user_id;
   }
 
+  // Prevenir duplicidad de manejadores si la instancia se reutiliza
+  bot.removeAllListeners('message');
+
   bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;

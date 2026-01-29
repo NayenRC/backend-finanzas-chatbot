@@ -134,6 +134,11 @@ async function handleIncomeRecording(userId, userMessage) {
             }
         }
 
+        // Validación extra de seguridad
+        if (!incomeData.monto || isNaN(incomeData.monto)) {
+            return `No pude captar el monto exacto de "**${incomeData.descripcion || 'tu ingreso'}**". 💰 ¿Me podrías decir cuánto fue? (ej: "fueron 10 lucas")`;
+        }
+
         // Find or use default category
         let categoria = await supabaseService.findCategoryByName(incomeData.categoria, 'INGRESO');
 
@@ -153,7 +158,7 @@ async function handleIncomeRecording(userId, userMessage) {
 
     } catch (error) {
         console.error('❌ Error registrando ingreso:', error);
-        return `Lo siento, algo no salió bien al guardar tu ingreso. 😕 ¿Podrías volver a intentarlo?`;
+        return `Lo siento, algo no salió bien al guardar tu ingreso: ${error.message}. 😕 ¿Podrías volver a intentarlo?`;
     }
 }
 

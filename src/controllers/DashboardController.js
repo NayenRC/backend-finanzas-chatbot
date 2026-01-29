@@ -27,3 +27,24 @@ export const getDashboardSummary = async (req, res) => {
     res.status(500).json({ message: "Error al cargar el dashboard" });
   }
 };
+
+export const getDashboardResumen = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.user_id;
+
+    const incomeSummary = await Dashboard.getIncomeSummary(userId);
+    const expenseSummary = await Dashboard.getExpenseSummary(userId);
+
+    const incomeTotal = Number(incomeSummary?.total_monto || 0);
+    const expenseTotal = Number(expenseSummary?.total_monto || 0);
+
+    res.json({
+      ingresos: incomeTotal,
+      gastos: expenseTotal,
+      balance: incomeTotal - expenseTotal,
+    });
+  } catch (error) {
+    console.error("❌ Dashboard resumen error:", error);
+    res.status(500).json({ error: "Error obteniendo resumen" });
+  }
+};
