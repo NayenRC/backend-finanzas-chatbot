@@ -1,8 +1,8 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
 import { Model } from 'objection'; // <--- IMPORTANTE: Importar Model
-import 'dotenv/config';
 
 import db from './config/db.js';     // <--- IMPORTANTE: Importar la conexión
 import router from './routes/index.js';
