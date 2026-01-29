@@ -108,32 +108,47 @@ class AuthController {
     }
   }
 
-static async register(req, res) {
-  try {
-    // 1. Recibir datos (usamos 'nombre' para coincidir con tu DB, o lo mapeamos abajo)
-    const { name, email, password } = req.body;
+  static async register(req, res) {
+    try {
+      // 1. Recibir datos
+      const { name, email, password } = req.body;
 
-    // 2. Verificar si el usuario ya existe
-    // Nota: Objection usa .query().findOne()
-    const existingUser = await Usuario.query().findOne({ email });
+      if (!email || !password) {
+        return res.status(400).json({ message: 'Email y contraseña son requeridos' });
+      }
 
-    if (existingUser) {
-      return res.status(400).json({ message: 'El usuario ya existe' });
+      // 2. Verificar si el usuario ya existe
+      const existingUser = await Usuario.query().findOne({ email });
+
+      if (existingUser) {
+        return res.status(400).json({ message: 'El usuario ya existe' });
+      }
+
+      // 3. Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const userId = uuidv4();
+
+      // 4. Crear usuario
+      // Asegurarse de usar los nombres de columnas correctos de tu DB
+      await Usuario.query().insert({
+        user_id: userId,
+        nombre: name || email.split('@')[0],
+        email: email,
+        password: hashedPassword,
+        moneda: 'CLP',
+        activo: true
+      });
+
+      res.status(201).json({ message: 'Usuario registrado exitosamente' });
+    } catch (error) {
+      console.error('❌ REGISTER ERROR:', error);
+      res.status(500).json({ message: 'Error al registrar usuario', error: error.message });
     }
-
-    // Aquí podrías agregar la lógica para registrar el usuario
-    // ...
-
-    res.status(201).json({ message: 'Usuario registrado exitosamente' });
-  } catch (error) {
-    console.error('❌ REGISTER ERROR:', error);
-    res.status(500).json({ message: 'Error al registrar usuario' });
   }
-}
 
-static async getProfile(req, res) {
-  res.json({ message: 'Perfil de usuario protegido', user: req.user });
-}
+  static async getProfile(req, res) {
+    res.json({ message: 'Perfil de usuario protegido', user: req.user });
+  }
 
   static async telegramLogin(req, res) {
     try {
@@ -181,6 +196,11 @@ static async getProfile(req, res) {
         return res.status(401).json({ message: 'Credenciales inválidas' });
       }
 
+      // Chequear si tiene contraseña (usuarios de RRSS o Telegram pueden no tener)
+      if (!user.password) {
+        return res.status(401).json({ message: 'Este usuario no tiene contraseña configurada. Intente otro método de acceso.' });
+      }
+
       // 2. Verificar contraseña
       const isValidPassword = await bcrypt.compare(password, user.password);
 
@@ -210,7 +230,6 @@ static async getProfile(req, res) {
       res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
-
 }
 
 export default AuthController;
