@@ -92,7 +92,11 @@ async function handleExpenseRecording(userId, userMessage) {
         }
 
         // Find or use default category
-        let categoria = await supabaseService.findCategoryByName(expenseData.categoria, 'GASTO');
+        let categoria = null;
+
+        if (expenseData.categoria) {
+            categoria = await supabaseService.findCategoryByName(expenseData.categoria, 'GASTO');
+        }
 
         if (!categoria && categories.length > 0) {
             categoria = categories.find(c => c.nombre.toLowerCase().includes('otro')) || categories[0];
@@ -140,7 +144,11 @@ async function handleIncomeRecording(userId, userMessage) {
         }
 
         // Find or use default category
-        let categoria = await supabaseService.findCategoryByName(incomeData.categoria, 'INGRESO');
+        let categoria = null;
+
+        if (incomeData.categoria) {
+            categoria = await supabaseService.findCategoryByName(incomeData.categoria, 'INGRESO');
+        }
 
         if (!categoria && categories.length > 0) {
             categoria = categories.find(c => c.nombre.toLowerCase().includes('otro')) || categories[0];

@@ -17,10 +17,38 @@ if (global.telegramBot) {
   console.log('🤖 Iniciando SmartFin Telegram Bot (AI Mode)...');
 
   bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
-    polling: true,
+    polling: {
+      interval: 300,
+      autoStart: true,
+      params: {
+        timeout: 10
+      }
+    }
   });
 
   global.telegramBot = bot;
+
+  // Handle polling errors
+  bot.on('polling_error', (error) => {
+    console.error('❌ Polling Error:', error.code, error.message);
+
+    if (error.code === 'ETELEGRAM' && error.message.includes('409')) {
+      console.error('\n⚠️  CONFLICTO DETECTADO ⚠️');
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.error('Hay otra instancia del bot corriendo.');
+      console.error('');
+      console.error('Posibles causas:');
+      console.error('  1. El bot está desplegado en Railway/Heroku/Vercel');
+      console.error('  2. Hay otra terminal con el bot corriendo');
+      console.error('  3. Otra aplicación está usando el mismo bot token');
+      console.error('');
+      console.error('Soluciones:');
+      console.error('  • Detén el bot en producción temporalmente');
+      console.error('  • O crea un bot de desarrollo separado con @BotFather');
+      console.error('  • O cierra todas las otras terminales con Node.js');
+      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    }
+  });
 
   console.log('✅ SmartFin Telegram Bot activo (Modo Conversacional AI)');
 
@@ -70,8 +98,10 @@ if (global.telegramBot) {
       await bot.sendMessage(chatId, cleanResponse, { parse_mode: 'Markdown' });
 
     } catch (error) {
-      console.error('❌ ERROR:', error);
-      bot.sendMessage(chatId, '❌ Error procesando tu mensaje.');
+      console.error('❌ ERROR COMPLETO:', error);
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
+      bot.sendMessage(chatId, `❌ Error procesando tu mensaje.\n\nDetalles: ${error.message}`);
     }
   });
 
