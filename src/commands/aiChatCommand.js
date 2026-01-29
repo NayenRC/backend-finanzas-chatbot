@@ -71,74 +71,53 @@ async function processMessage(userId, userMessage) {
     }
 }
 
-/**
- * Handle expense recording flow
- */
 async function handleExpenseRecording(userId, userMessage) {
     try {
         console.log(`📝 Registrando gasto para usuario ${userId}: "${userMessage}"`);
 
         // Get available categories
         const categories = await supabaseService.getCategories('GASTO');
-        console.log(`📂 Categorías de GASTO encontradas: ${categories.length}`);
-
-        if (categories.length === 0) {
-            return '❌ No hay categorías de gastos configuradas. Por favor contacta al administrador.';
-        }
 
         // Use AI to extract expense data
         const expenseData = await openRouterService.classifyExpense(userMessage, categories);
 
         if (expenseData.error) {
-            return `❌ ${expenseData.error}\n\nPor favor intenta algo como: "Gasté 5000 en almuerzo"`;
+            return `¡Hola! 👋 ${expenseData.sugerencia || 'Para registrar un gasto, necesito saber el monto y en qué consistió. ¿Me podrías dar más detalles?'}`;
+        }
+
+        if (expenseData.info_faltante && expenseData.info_faltante.length > 0) {
+            if (expenseData.info_faltante.includes('monto')) {
+                return `Entiendo que quieres registrar un gasto sobre "**${expenseData.descripcion || 'algo'}**", pero me falta el monto. 💰 ¿Cuánto gastaste aproximadamente?`;
+            }
         }
 
         // Find or use default category
         let categoria = await supabaseService.findCategoryByName(expenseData.categoria, 'GASTO');
 
         if (!categoria && categories.length > 0) {
-            // Use first available category as default
             categoria = categories.find(c => c.nombre.toLowerCase().includes('otro')) || categories[0];
-            console.log(`⚠️ Categoría "${expenseData.categoria}" no encontrada, usando: ${categoria.nombre}`);
-        }
-
-        if (!categoria) {
-            return '❌ No hay categorías de gastos disponibles. Por favor contacta al administrador.';
         }
 
         // Save expense to database
         const expense = await supabaseService.createExpense(userId, {
             monto: expenseData.monto,
             descripcion: expenseData.descripcion,
-            categoria_id: categoria.id_categoria,
+            categoria_id: categoria?.id_categoria || null,
             fecha: new Date().toISOString().split('T')[0]
         });
 
-        return `✅ Gasto registrado exitosamente!\n\n💸 Monto: $${expenseData.monto.toLocaleString('es-CL')}\n📝 Descripción: ${expenseData.descripcion}\n🏷️ Categoría: ${categoria.nombre}`;
+        return `¡Listo! ✨ He registrado tu gasto:\n\n💸 **Monto**: $${expenseData.monto.toLocaleString('es-CL')}\n📝 **Descripción**: ${expenseData.descripcion}\n🏷️ **Categoría**: ${categoria?.nombre || 'General'}\n\n¿Quieres registrar algo más o prefieres ver un resumen? 😊`;
 
     } catch (error) {
         console.error('❌ Error registrando gasto:', error);
-        console.error('Stack trace:', error.stack);
-        console.error('UserId:', userId);
-        console.error('UserMessage:', userMessage);
-
-        // Return more specific error message
-        if (error.message && error.message.includes('foreign key')) {
-            return '❌ Error: El usuario no existe en el sistema. Por favor contacta al administrador.';
-        } else if (error.message && error.message.includes('null value')) {
-            return '❌ Error: Faltan datos requeridos. Intenta: "Gasté 5000 en almuerzo"';
-        } else {
-            const errorMsg = error.message || 'Error desconocido';
-            return `❌ Error al registrar gasto: ${errorMsg}\n\nPor favor intenta de nuevo o contacta al administrador.`;
-        }
+        return `Lo siento, tuve un pequeño problema técnico al guardar ese gasto. 😅 ¿Podrías intentar decírmelo de nuevo?`;
     }
 }
 
-/**
- * Handle income recording flow
- */
 async function handleIncomeRecording(userId, userMessage) {
     try {
+        console.log(`📝 Registrando ingreso para usuario ${userId}: "${userMessage}"`);
+
         // Get available categories
         const categories = await supabaseService.getCategories('INGRESO');
 
@@ -146,7 +125,13 @@ async function handleIncomeRecording(userId, userMessage) {
         const incomeData = await openRouterService.classifyExpense(userMessage, categories);
 
         if (incomeData.error) {
-            return `❌ ${incomeData.error}\n\nPor favor intenta algo como: "Recibí 50000 de sueldo"`;
+            return `¡Hola! 👋 ${incomeData.sugerencia || 'Para registrar un ingreso, necesito saber el monto y de dónde proviene. ¿Me podrías dar más detalles?'}`;
+        }
+
+        if (incomeData.info_faltante && incomeData.info_faltante.length > 0) {
+            if (incomeData.info_faltante.includes('monto')) {
+                return `¡Genial que hayas recibido dinero! 💰 Pero me falta saber el monto de "**${incomeData.descripcion || 'este ingreso'}**". ¿Cuánto fue el valor?`;
+            }
         }
 
         // Find or use default category
@@ -154,7 +139,6 @@ async function handleIncomeRecording(userId, userMessage) {
 
         if (!categoria && categories.length > 0) {
             categoria = categories.find(c => c.nombre.toLowerCase().includes('otro')) || categories[0];
-            console.log(`⚠️ Categoría "${incomeData.categoria}" no encontrada, usando: ${categoria.nombre}`);
         }
 
         // Save income to database
@@ -165,11 +149,11 @@ async function handleIncomeRecording(userId, userMessage) {
             fecha: new Date().toISOString().split('T')[0]
         });
 
-        return `✅ Ingreso registrado exitosamente!\n\n💰 Monto: $${incomeData.monto.toLocaleString('es-CL')}\n📝 Descripción: ${incomeData.descripcion}${categoria ? `\n🏷️ Categoría: ${categoria.nombre}` : ''}`;
+        return `¡Excelente! 🌟 He registrado tu ingreso:\n\n💰 **Monto**: $${incomeData.monto.toLocaleString('es-CL')}\n📝 **Descripción**: ${incomeData.descripcion}\n🏷️ **Categoría**: ${categoria?.nombre || 'General'}\n\n¡Qué bueno ver que tu balance crece! ¿Te gustaría revisar cómo van tus finanzas hoy?`;
 
     } catch (error) {
         console.error('❌ Error registrando ingreso:', error);
-        return '❌ Hubo un error al registrar el ingreso. Por favor intenta de nuevo.';
+        return `Lo siento, algo no salió bien al guardar tu ingreso. 😕 ¿Podrías volver a intentarlo?`;
     }
 }
 
