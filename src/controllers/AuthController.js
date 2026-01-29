@@ -1,10 +1,7 @@
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcrypt';
-import crypto from 'crypto';
 import Usuario from '../models/Usuario.js';
-import emailService from '../services/emailService.js';
-import { v4 as uuidv4 } from 'uuid'; // Necesitarás esto si tu DB no genera UUIDs automáticamente
-
+import supabaseService from '../services/supabaseService.js';
+const { supabase } = supabaseService;
 class AuthController {
   // ... (previous methods)
 
@@ -108,32 +105,72 @@ class AuthController {
     }
   }
 
-static async register(req, res) {
-  try {
-    // 1. Recibir datos (usamos 'nombre' para coincidir con tu DB, o lo mapeamos abajo)
-    const { name, email, password } = req.body;
+  static async register(req, res) {
+    try {
+      const { name, email, password } = req.body;
 
-    // 2. Verificar si el usuario ya existe
-    // Nota: Objection usa .query().findOne()
-    const existingUser = await Usuario.query().findOne({ email });
+      if (!name || !email || !password) {
+        return res.status(400).json({ message: 'Todos los campos son requeridos' });
+      }
 
-    if (existingUser) {
-      return res.status(400).json({ message: 'El usuario ya existe' });
+      const normalizedEmail = email.toLowerCase().trim();
+
+      // 1. Registrar en Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: normalizedEmail,
+        password: password,
+        options: {
+          data: {
+            display_name: name,
+          },
+        },
+      });
+
+      if (authError) {
+        console.error('❌ Supabase Auth Register Error:', authError.message);
+        return res.status(400).json({ message: authError.message });
+      }
+
+      const supabaseUser = authData.user;
+      if (!supabaseUser) {
+        return res.status(500).json({ message: 'Error al registrar usuario en Auth' });
+      }
+
+      // 2. Sincronizar con tabla local 'usuario'
+      try {
+        const newUser = await Usuario.query().insert({
+          user_id: supabaseUser.id,
+          nombre: name,
+          email: normalizedEmail,
+          moneda: 'CLP',
+          activo: true
+        });
+
+        res.status(201).json({
+          message: 'Usuario registrado exitosamente',
+          user: {
+            id: newUser.user_id,
+            nombre: newUser.nombre,
+            email: newUser.email
+          }
+        });
+      } catch (dbError) {
+        console.error('⚠️ Error al guardar en tabla usuario:', dbError.message);
+        res.status(201).json({
+          message: 'Usuario registrado en Auth (error sync db local)',
+          user: { id: supabaseUser.id, email: normalizedEmail }
+        });
+      }
+
+    } catch (error) {
+      console.error('❌ REGISTER ERROR:', error);
+      res.status(500).json({ message: 'Error interno al registrar usuario' });
     }
-
-    // Aquí podrías agregar la lógica para registrar el usuario
-    // ...
-
-    res.status(201).json({ message: 'Usuario registrado exitosamente' });
-  } catch (error) {
-    console.error('❌ REGISTER ERROR:', error);
-    res.status(500).json({ message: 'Error al registrar usuario' });
   }
-}
 
-static async getProfile(req, res) {
-  res.json({ message: 'Perfil de usuario protegido', user: req.user });
-}
+  static async getProfile(req, res) {
+    res.json({ message: 'Perfil de usuario protegido', user: req.user });
+  }
 
   static async telegramLogin(req, res) {
     try {
@@ -173,28 +210,40 @@ static async getProfile(req, res) {
   static async login(req, res) {
     try {
       const { email, password } = req.body;
+      const normalizedEmail = email ? email.toLowerCase().trim() : '';
 
-      // 1. Buscar usuario por email
-      const user = await Usuario.query().findOne({ email });
+      console.log('🔐 Intentando login con Supabase Auth:', normalizedEmail);
 
+      // 1. Autenticar con Supabase Auth
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password: password,
+      });
+
+      if (error) {
+        console.log('❌ Supabase Auth Error:', error.message);
+        return res.status(401).json({ message: 'Credenciales inválidas' });
+      }
+
+      const supabaseUser = data.user;
+
+      // 2. Buscar/Verificar en tabla local para obtener datos adicionales
+      let user = await Usuario.query().findOne({ user_id: supabaseUser.id });
+
+      // Si por alguna razón no está en la tabla local pero sí en Auth, lo creamos
       if (!user) {
-        return res.status(401).json({ message: 'Credenciales inválidas' });
+        console.log('⚠️ Usuario en Auth pero no en DB local. Sincronizando...');
+        user = await Usuario.query().insert({
+          user_id: supabaseUser.id,
+          nombre: supabaseUser.user_metadata?.display_name || 'Usuario',
+          email: normalizedEmail,
+          moneda: 'CLP',
+          activo: true
+        });
       }
 
-      // 2. Verificar contraseña
-      const isValidPassword = await bcrypt.compare(password, user.password);
-
-      if (!isValidPassword) {
-        return res.status(401).json({ message: 'Credenciales inválidas' });
-      }
-
-      // 3. Generar token
-      const token = jwt.sign(
-        { id: user.user_id, email: user.email },
-        process.env.JWT_SECRET || 'secret_key',
-        { expiresIn: '1h' },
-      );
-
+      // 3. Devolvemos el token de Supabase (o generamos nuestro propio JWT si prefieres)
+      // Usualmente usamos el de Supabase (data.session.access_token)
       res.status(200).json({
         message: 'Login exitoso',
         user: {
@@ -202,7 +251,7 @@ static async getProfile(req, res) {
           nombre: user.nombre,
           email: user.email
         },
-        token,
+        token: data.session.access_token,
       });
 
     } catch (err) {

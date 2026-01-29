@@ -10,6 +10,10 @@
     "build": "npm run db:migrate && npm run db:seed",
     "db:migrate": "knex migrate:latest",
     "db:seed": "knex seed:run",
+    "db:check-db": "node scripts/db/check_db_detailed.js",
+    "db:reset-user": "node scripts/db/reset_user.js",
+    "test:cors": "node tests/test_cors.js",
+    "test:full-auth": "node tests/test_full_auth.js",
     "command:seed": "node src/commands/seed.js"
   },
   "keywords": [
