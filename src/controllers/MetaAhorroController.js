@@ -1,66 +1,77 @@
 import MetaAhorro from '../models/MetaAhorro.js';
-import MovimientoAhorro from '../models/MovimientoAhorro.js';
+import MetaAhorroService from '../services/metaAhorroService.js';
 
-class MetaAhorroService {
+export const index = async (req, res) => {
+  try {
+    const userId =
+      req.user?.id || req.user?.user_id || req.params.userId;
 
-  /* ===============================
-     Crear meta de ahorro
-  =============================== */
-  async crearMeta(userId, data) {
-    const montoObjetivo = Number(data.monto_objetivo);
-
-    if (!userId || !data.nombre || isNaN(montoObjetivo)) {
-      throw new Error('Datos inválidos para crear la meta');
+    if (userId) {
+      const metas = await MetaAhorro.findByUser(userId);
+      return res.json(metas);
     }
 
-    const meta = await MetaAhorro.create({
-      user_id: userId,
-      nombre: data.nombre,
-      monto_objetivo: montoObjetivo,
-      monto_actual: 0
-    });
-
-    return meta;
+    const metas = await MetaAhorro.all();
+    res.json(metas);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
+};
 
-  /* ===============================
-     Registrar movimiento de ahorro
-  =============================== */
-  async agregarMovimiento(metaId, userId, monto, fecha) {
-    const meta = await MetaAhorro.findByIdAndUser(metaId, userId);
+export const show = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.user_id;
+    const { id } = req.params;
 
+    const meta = await MetaAhorro.findByIdAndUser(id, userId);
     if (!meta) {
-      throw new Error('Meta de ahorro no encontrada');
+      return res.status(404).json({ message: 'Meta no encontrada' });
     }
 
-    const montoMovimiento = Number(monto);
-    if (isNaN(montoMovimiento) || montoMovimiento <= 0) {
-      throw new Error('Monto de movimiento inválido');
-    }
-
-    // 1️⃣ Crear movimiento
-    const movimiento = await MovimientoAhorro.create({
-      meta_id: metaId,
-      monto: montoMovimiento,
-      fecha
-    });
-
-    // 2️⃣ Actualizar monto actual de la meta
-    const nuevoMonto = Number(meta.monto_actual) + montoMovimiento;
-
-    await MetaAhorro.updateByUser(metaId, userId, {
-      monto_actual: nuevoMonto
-    });
-
-    return {
-      movimiento,
-      progreso: {
-        actual: nuevoMonto,
-        objetivo: meta.monto_objetivo,
-        completada: nuevoMonto >= meta.monto_objetivo
-      }
-    };
+    res.json(meta);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-}
+};
 
-export default new MetaAhorroService();
+export const store = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.user_id;
+    const meta = await MetaAhorroService.crearMeta(userId, req.body);
+    res.status(201).json(meta);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const update = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.user_id;
+    const { id } = req.params;
+
+    const updated = await MetaAhorro.updateByUser(id, userId, req.body);
+    if (!updated) {
+      return res.status(404).json({ message: 'Meta no encontrada' });
+    }
+
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const destroy = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.user_id;
+    const { id } = req.params;
+
+    const deleted = await MetaAhorro.deleteByUser(id, userId);
+    if (!deleted) {
+      return res.status(404).json({ message: 'Meta no encontrada' });
+    }
+
+    res.json({ message: 'Meta eliminada correctamente' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
