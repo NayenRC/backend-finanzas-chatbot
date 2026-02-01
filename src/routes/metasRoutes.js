@@ -13,14 +13,15 @@ const router = Router();
 
 router.use(authenticateToken);
 
-router.get("/", index);
-router.get("/:id", show);
-router.post("/", store);
-router.put("/:id", update);
-router.delete("/:id", destroy);
+// ⚠️ RUTAS ESPECÍFICAS PRIMERO
+router.get("/:metaId/movimientos", movIndex);
 router.get("/usuario/:userId", index);
 
-// Movimientos por meta
-router.get("/:metaId/movimientos", movIndex);
+// CRUD de metas
+router.get("/", index);
+router.post("/", store);
+router.get("/:id", show);
+router.put("/:id", update);
+router.delete("/:id", destroy);
 
 export default router;
