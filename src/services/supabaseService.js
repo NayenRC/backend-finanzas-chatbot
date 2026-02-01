@@ -112,7 +112,7 @@ async function createIncome(userId, incomeData) {
  * Get categories by type (GASTO, INGRESO, AHORRO)
  */
 async function getCategories(type = null) {
-    let query = db('categorias');
+    let query = db('categoria');
 
     if (type) {
         query = query.where('tipo', type);
@@ -125,7 +125,7 @@ async function getCategories(type = null) {
  * Find category by name (case-insensitive)
  */
 async function findCategoryByName(name, type = 'GASTO') {
-    const categories = await db('categorias')
+    const categories = await db('categoria')
         .where('tipo', type)
         .whereRaw('LOWER(nombre) = ?', [name.toLowerCase()]);
 
@@ -216,14 +216,14 @@ async function getExpensesByCategory(userId, filters = {}) {
     const { startDate, endDate } = filters;
 
     let query = db('gasto')
-        .join('categorias', 'gasto.categoria_id', 'categorias.id_categoria')
+        .join('categoria', 'gasto.categoria_id', 'categoria.id_categoria')
         .where('gasto.user_id', userId)
         .select(
-            'categorias.nombre as categoria',
+            'categoria.nombre as categoria',
             db.raw('COUNT(*) as cantidad'),
             db.raw('SUM(gasto.monto) as total')
         )
-        .groupBy('categorias.id_categoria', 'categorias.nombre');
+        .groupBy('categoria.id_categoria', 'categoria.nombre');
 
     if (startDate) {
         query = query.where('gasto.fecha', '>=', startDate);
