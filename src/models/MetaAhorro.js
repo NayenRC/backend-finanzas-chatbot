@@ -42,5 +42,20 @@ class MetaAhorro extends Model {
       .where(this.primaryKey, id)
       .andWhere('user_id', user_id)
       .update(data)
-      .ret
+      .returning('*');
 
+    return result;
+  }
+
+  /* ===============================
+     Eliminar meta
+  =============================== */
+  static async deleteByUser(id, user_id) {
+    return db(this.tableName)
+      .where(this.primaryKey, id)
+      .andWhere('user_id', user_id)
+      .del();
+  }
+}
+
+export default MetaAhorro;
