@@ -7,32 +7,6 @@ import Usuario from '../models/Usuario.js';
 
 const { supabase } = supabaseService;
 
-export const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      return res.status(401).json({ message: error.message });
-    }
-
-    const token = jwt.sign(
-      { id: data.user.id, email: data.user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    res.json({ token, user: data.user });
-  } catch (err) {
-    console.error('❌ LOGIN ERROR:', err);
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-};
-
 class AuthController {
   // ... (previous methods)
 
