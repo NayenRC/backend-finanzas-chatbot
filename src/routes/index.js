@@ -26,6 +26,8 @@ router.use("/chat", chatRoutes); // <--- NUEVO ENDPOINT IA
 router.use("/consejos", consejosRoutes);
 router.use("/categorias", categoriasRoutes);
 router.use("/dashboard", dashboardRoutes);
+router.get('/profile', authenticateToken, AuthController.getProfile);
+
 
 // router.get("/", ...
 

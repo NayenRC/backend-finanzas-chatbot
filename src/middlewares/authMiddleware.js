@@ -3,9 +3,9 @@ import supabaseService from '../services/supabaseService.js';
 const { supabase } = supabaseService;
 
 export async function authenticateToken(req, res, next) {
-  // ✅ Permitir preflight CORS
+  // 🔑 RESPONDER PREFLIGHT
   if (req.method === 'OPTIONS') {
-    return next();
+    return res.sendStatus(204);
   }
 
   const authHeader = req.headers.authorization;
