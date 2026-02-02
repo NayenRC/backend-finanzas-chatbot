@@ -11,7 +11,7 @@ if (
     process.env.SUPABASE_SERVICE_ROLE_KEY.trim()
   );
 } else {
-  console.warn('⚠️ Supabase NO inicializado');
+  console.warn('⚠️ Supabase NO inicializado (variables faltantes)');
 }
 
 export default { supabase };

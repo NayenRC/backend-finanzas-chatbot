@@ -10,7 +10,6 @@ import router from './routes/index.js';
 Model.knex(db);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.use(cors({
   origin: '*',
@@ -19,12 +18,8 @@ app.use(cors({
 }));
 
 app.options('*', cors());
-
 app.use(morgan('dev'));
 app.use(express.json());
-
 app.use('/api', router);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+app.listen(process.env.PORT || 3000);
