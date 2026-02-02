@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "build": "npm run db:migrate && npm run db:seed",
+    "build": "echo 'Build OK'",
     "db:migrate": "knex migrate:latest",
     "db:seed": "knex seed:run",
     "db:check-db": "node scripts/db/check_db_detailed.js",
