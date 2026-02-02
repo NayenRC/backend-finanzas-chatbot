@@ -1,11 +1,8 @@
 import Dashboard from "../models/Dashboard.js";
 
-/**
- * Resumen del dashboard (frontend)
- */
 export const getDashboardResumen = async (req, res) => {
   try {
-    const userId = req.user.id || req.user.user_id;
+    const userId = req.user.id;
 
     const incomeSummary = await Dashboard.getIncomeSummary(userId);
     const expenseSummary = await Dashboard.getExpenseSummary(userId);
@@ -28,5 +25,3 @@ export const getDashboardResumen = async (req, res) => {
     res.status(500).json({ message: "Error obteniendo resumen del dashboard" });
   }
 };
-
-export default getDashboardResumen;

@@ -1,3 +1,4 @@
+import jwt from "jsonwebtoken";
 import supabaseService from "../services/supabaseService.js";
 
 const { supabase } = supabaseService;
@@ -10,22 +11,28 @@ export async function authenticateToken(req, res, next) {
     return res.status(401).json({ message: "Token requerido" });
   }
 
+  // 1️⃣ Intentar validar con Supabase
   try {
-    // ✅ VALIDAR TOKEN SUPABASE
     const { data, error } = await supabase.auth.getUser(token);
 
-    if (error || !data?.user) {
-      return res.status(403).json({ message: "Token inválido" });
+    if (data?.user) {
+      req.user = {
+        id: data.user.id,
+        email: data.user.email,
+      };
+      return next();
     }
-
-    req.user = {
-      id: data.user.id,
-      email: data.user.email,
-    };
-
-    next();
   } catch (err) {
-    console.error("❌ Auth middleware error:", err);
-    res.status(403).json({ message: "Token inválido" });
+    console.warn("⚠️ Supabase auth falló, probando JWT local");
+  }
+
+  // 2️⃣ Fallback JWT local
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    return next();
+  } catch (err) {
+    return res.status(403).json({ message: "Token inválido" });
   }
 }
+export default authenticateToken;
