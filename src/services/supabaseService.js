@@ -9,14 +9,21 @@ import { createClient } from '@supabase/supabase-js';
 import db from '../config/db.js';
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-  throw new Error('❌ SUPABASE ENV VARS missing');
+    throw new Error('❌ SUPABASE ENV VARS missing');
+}
+let supabase = null;
+
+if (
+  process.env.SUPABASE_URL &&
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+) {
+  supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
 }
 
 
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 /**
  * Get expenses for a user with optional filters
  */
