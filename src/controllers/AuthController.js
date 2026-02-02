@@ -1,15 +1,17 @@
 import supabaseService from '../services/supabaseService.js';
+import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import Usuario from '../models/Usuario.js';
+// import emailService from '../services/emailService.js'; // si lo usas
 
 const { supabase } = supabaseService;
 
 class AuthController {
 
   /* =========================
-     LOGIN
+     LOGIN (SUPABASE AUTH)
   ========================= */
   static async login(req, res) {
     try {
@@ -20,31 +22,36 @@ class AuthController {
       }
 
       const normalizedEmail = email.toLowerCase().trim();
+      console.log('🔐 Intentando login con Supabase Auth:', normalizedEmail);
 
-      console.log('🔐 Login Supabase:', normalizedEmail);
-
+      // 1. Login en Supabase Auth
       const { data, error } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
         password,
       });
 
       if (error) {
-        console.error('❌ Supabase login error:', error.message);
-        return res.status(401).json({ message: 'Email o contraseña incorrectos' });
+        console.log('❌ Supabase Auth Error:', error.message);
+
+        let message = 'Credenciales inválidas';
+
+        if (error.message?.includes('Email not confirmed')) {
+          message = 'Debes confirmar tu correo antes de iniciar sesión.';
+        } else if (error.message?.includes('Invalid login credentials')) {
+          message = 'Email o contraseña incorrectos.';
+        }
+
+        return res.status(401).json({ message });
       }
 
       const supabaseUser = data.user;
-      const session = data.session;
 
-      if (!supabaseUser || !session) {
-        return res.status(500).json({ message: 'Error de sesión' });
-      }
-
-      // Buscar usuario local
+      // 2. Buscar usuario en DB local
       let user = await Usuario.query().findOne({ user_id: supabaseUser.id });
 
-      // Si no existe → crear
+      // 3. Si no existe en DB local, lo sincronizamos
       if (!user) {
+        console.log('⚠️ Usuario no existe en DB local. Creando...');
         user = await Usuario.query().insert({
           user_id: supabaseUser.id,
           nombre: supabaseUser.user_metadata?.display_name || 'Usuario',
@@ -54,18 +61,19 @@ class AuthController {
         });
       }
 
+      // 4. Respuesta consistente
       return res.status(200).json({
         message: 'Login exitoso',
+        token: data.session.access_token, // token Supabase
         user: {
           id: user.user_id,
           nombre: user.nombre,
           email: user.email,
         },
-        token: session.access_token,
       });
 
-    } catch (err) {
-      console.error('🔥 LOGIN ERROR:', err);
+    } catch (error) {
+      console.error('🔥 LOGIN ERROR:', error);
       return res.status(500).json({ message: 'Error interno del servidor' });
     }
   }
@@ -80,15 +88,10 @@ class AuthController {
       if (!name || !email || !password) {
         return res.status(400).json({ message: 'Todos los campos son requeridos' });
       }
-      if (!supabase) {
-        return res.status(500).json({ message: 'Supabase no disponible' });
-      }
-
 
       const normalizedEmail = email.toLowerCase().trim();
 
-      console.log('📝 Registro Supabase:', normalizedEmail);
-
+      // 1. Registro en Supabase Auth
       const { data, error } = await supabase.auth.signUp({
         email: normalizedEmail,
         password,
@@ -100,34 +103,86 @@ class AuthController {
       });
 
       if (error) {
-        console.error('❌ Supabase register error:', error.message);
+        console.error('❌ Supabase Register Error:', error.message);
         return res.status(400).json({ message: error.message });
       }
 
       const supabaseUser = data.user;
-
       if (!supabaseUser) {
-        return res.status(500).json({ message: 'No se pudo crear el usuario' });
+        return res.status(500).json({ message: 'Error al crear usuario en Auth' });
       }
 
-      // Crear usuario local
-      await Usuario.query().insert({
-        user_id: supabaseUser.id,
-        nombre: name,
-        email: normalizedEmail,
-        moneda: 'CLP',
-        activo: true,
-      });
+      // 2. Guardar en DB local
+      try {
+        await Usuario.query().insert({
+          user_id: supabaseUser.id,
+          nombre: name,
+          email: normalizedEmail,
+          moneda: 'CLP',
+          activo: true,
+        });
+      } catch (dbError) {
+        console.warn('⚠️ Usuario creado en Auth pero no en DB local:', dbError.message);
+      }
 
       return res.status(201).json({
-        message: 'Usuario registrado correctamente. Revisa tu correo si es necesario confirmar.',
+        message: 'Usuario registrado exitosamente. Revisa tu correo para confirmar la cuenta.',
       });
 
-    } catch (err) {
-      console.error('🔥 REGISTER ERROR:', err);
-      return res.status(500).json({ message: 'Error interno del servidor' });
+    } catch (error) {
+      console.error('🔥 REGISTER ERROR:', error);
+      return res.status(500).json({ message: 'Error interno al registrar usuario' });
     }
   }
+
+  /* =========================
+     PROFILE (PROTEGIDO)
+  ========================= */
+  static async getProfile(req, res) {
+    return res.json({
+      message: 'Perfil protegido',
+      user: req.user,
+    });
+  }
+
+  /* =========================
+     TELEGRAM LOGIN
+  ========================= */
+  static async telegramLogin(req, res) {
+    try {
+      const { telegram_id, username, nombre } = req.body;
+
+      if (!telegram_id) {
+        return res.status(400).json({ message: 'telegram_id requerido' });
+      }
+
+      let user = await Usuario.query().findOne({ telegram_id });
+
+      if (!user) {
+        user = await Usuario.query().insert({
+          user_id: uuidv4(),
+          telegram_id,
+          nombre: nombre || 'Usuario Telegram',
+          username: username || null,
+          moneda: 'CLP',
+          activo: true,
+        });
+      }
+
+      const token = jwt.sign(
+        { id: user.user_id },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      return res.json({ token });
+
+    } catch (error) {
+      console.error('❌ TELEGRAM LOGIN ERROR:', error);
+      return res.status(500).json({ message: 'Error login Telegram' });
+    }
+  }
+
 }
 
 export default AuthController;
