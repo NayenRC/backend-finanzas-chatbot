@@ -3,8 +3,8 @@ import MetaAhorroService from '../services/metaAhorroService.js';
 
 export const index = async (req, res) => {
   try {
-    const userId =
-      req.user?.id || req.user?.user_id || req.params.userId;
+    const userId = req.user.id;
+
 
     if (userId) {
       const metas = await MetaAhorro.findByUser(userId);
@@ -75,3 +75,13 @@ export const destroy = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+const MetaAhorroController = {
+  index,
+  show,
+  store,
+  update,
+  destroy,
+};
+
+export default MetaAhorroController;
