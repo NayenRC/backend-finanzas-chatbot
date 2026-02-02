@@ -8,16 +8,11 @@
 import { createClient } from '@supabase/supabase-js';
 import db from '../config/db.js';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.SUPABASE_URL || 'https://bluazcviihdrhqgkmohg.supabase.co';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY;
 
-if (!supabaseKey) {
-    console.warn('⚠️ SUPABASE_ANON_KEY not configured. Some features may not work.');
-}
-
-const supabase = supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
-
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 /**
  * Get expenses for a user with optional filters
  */
