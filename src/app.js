@@ -8,7 +8,10 @@ import db from './config/db.js';
 import router from './routes/index.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 
-import './bot/telegramBot.js';
+if (process.env.ENABLE_TELEGRAM === 'true') {
+  import('./bot/telegramBot.js');
+}
+
 import './config/db.js';
 
 // --- CONECTAR OBJECTION ---
@@ -21,14 +24,21 @@ const PORT = process.env.PORT || 3000;
 // Middlewares
 // =====================
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'https://smartfin-front.vercel.app'
-  ],
-  credentials: true
+  origin: (origin, callback) => {
+    const allowed = [
+      'http://localhost:5173',
+      'https://smartfin-front.vercel.app'
+    ];
+
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS bloqueado'));
+    }
+  },
+  credentials: true,
 }));
 
-// 👉 CLAVE para evitar errores CORS en producción
 app.options('*', cors());
 
 app.use(morgan('dev'));
