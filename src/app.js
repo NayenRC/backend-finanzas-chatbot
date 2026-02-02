@@ -2,15 +2,14 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import { Model } from 'objection'; // <--- IMPORTANTE: Importar Model
+import { Model } from 'objection';
 
-import db from './config/db.js';     // <--- IMPORTANTE: Importar la conexión
+import db from './config/db.js';
 import router from './routes/index.js';
 import telegramRoutes from './routes/telegramRoutes.js';
-// import finanzasRoutes from './routes/finanzas.routes.js';
-import './bot/telegramBot.js'; // Asegura que el bot de Telegram se inicie
-import './config/db.js'; // Inicializa la conexión a la base de datos
 
+import './bot/telegramBot.js';
+import './config/db.js';
 
 // --- CONECTAR OBJECTION ---
 Model.knex(db);
@@ -21,30 +20,17 @@ const PORT = process.env.PORT || 3000;
 // =====================
 // Middlewares
 // =====================
-const allowedOrigins = [
-  'http://localhost:3001',
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:5175',
-  process.env.FRONTEND_URL
-].filter(Boolean);
-
 app.use(cors({
-  origin: function (origin, callback) {
-    // Permitir requests sin origin (como mobile apps o curl)
-    if (!origin) return callback(null, true);
-
-    // Permitir dominios de Vercel dinámicamente
-    const isVercel = origin.endsWith('.vercel.app');
-
-    if (allowedOrigins.indexOf(origin) !== -1 || isVercel) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: [
+    'http://localhost:5173',
+    'https://smartfin-front.vercel.app'
+  ],
   credentials: true
 }));
+
+// 👉 CLAVE para evitar errores CORS en producción
+app.options('*', cors());
+
 app.use(morgan('dev'));
 app.use(express.json());
 
@@ -54,10 +40,9 @@ app.use(express.json());
 app.use('/api', router);
 
 // =====================
-// Rutas Telegram (SOLO webhook / auth)
+// Rutas Telegram
 // =====================
 app.use(telegramRoutes);
-// app.use(finanzasRoutes);
 
 // =====================
 // Iniciar servidor
