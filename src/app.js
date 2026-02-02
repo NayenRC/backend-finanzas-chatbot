@@ -8,45 +8,47 @@ import db from './config/db.js';
 import router from './routes/index.js';
 import telegramRoutes from './routes/telegramRoutes.js';
 
-if (process.env.ENABLE_TELEGRAM === 'true') {
-  import('./bot/telegramBot.js');
-}
-
+// Conectar Objection
 Model.knex(db);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // =====================
-// CORS (CORRECTO)
+// 🔥 CORS (FIX FINAL)
 // =====================
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://smartfin-front.vercel.app'
-];
-
 app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(null, false);
-  },
-  credentials: true,
+  origin: [
+    'http://localhost:5173',
+    'https://smartfin-front.vercel.app',
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true,
 }));
 
+// ⚠️ PRE-FLIGHT (ESTO ES CLAVE)
 app.options('*', cors());
 
+// =====================
+// Middlewares
 // =====================
 app.use(morgan('dev'));
 app.use(express.json());
 
 // =====================
+// Rutas API
+// =====================
 app.use('/api', router);
+
+// =====================
+// Rutas Telegram
+// =====================
 app.use(telegramRoutes);
 
 // =====================
+// Server
+// =====================
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
+  console.log(`🚀 Backend corriendo en puerto ${PORT}`);
 });
