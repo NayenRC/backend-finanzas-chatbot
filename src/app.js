@@ -11,15 +11,19 @@ Model.knex(db);
 
 const app = express();
 
+/* =====================
+   CORS SIMPLE (FUNCIONA)
+===================== */
 app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  origin: true, // 🔑 refleja automáticamente el origin (Vercel)
+  credentials: false, // 🔑 NO usas cookies
 }));
 
-app.options('*', cors());
-app.use(morgan('dev'));
 app.use(express.json());
+app.use(morgan('dev'));
+
 app.use('/api', router);
 
-app.listen(process.env.PORT || 3000);
+app.listen(process.env.PORT || 3000, () => {
+  console.log('🚀 Backend running');
+});
