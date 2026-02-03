@@ -1,9 +1,9 @@
 export const up = async function (knex) {
-    // 1. Crear tabla INGRESO si no existe
-    if (!(await knex.schema.hasTable('ingreso'))) {
-        await knex.schema.createTable('ingreso', (table) => {
+    // 1. Crear tabla INGRESOS si no existe
+    if (!(await knex.schema.hasTable('ingresos'))) {
+        await knex.schema.createTable('ingresos', (table) => {
             table.increments('id_ingreso').primary();
-            table.uuid('user_id').notNullable().references('user_id').inTable('usuario').onDelete('CASCADE');
+            table.uuid('user_id').notNullable().references('user_id').inTable('usuarios').onDelete('CASCADE');
             table.decimal('monto', 14, 2).notNullable();
             table.string('descripcion').notNullable();
             table.timestamp('fecha').defaultTo(knex.fn.now());
@@ -12,11 +12,11 @@ export const up = async function (knex) {
         });
     }
 
-    // 2. Crear tabla GASTO si no existe
-    if (!(await knex.schema.hasTable('gasto'))) {
-        await knex.schema.createTable('gasto', (table) => {
+    // 2. Crear tabla GASTOS si no existe
+    if (!(await knex.schema.hasTable('gastos'))) {
+        await knex.schema.createTable('gastos', (table) => {
             table.increments('id_gasto').primary();
-            table.uuid('user_id').notNullable().references('user_id').inTable('usuario').onDelete('CASCADE');
+            table.uuid('user_id').notNullable().references('user_id').inTable('usuarios').onDelete('CASCADE');
             // Importante: categoría es opcional o requerida según tu lógica
             // Asegúrate de que 'categorias' exista antes, o usa entero/uuid según corresponda.
             // Asumiendo que 'categorias' usa id_categoria (integer)
@@ -31,6 +31,6 @@ export const up = async function (knex) {
 };
 
 export const down = async function (knex) {
-    await knex.schema.dropTableIfExists('gasto');
-    await knex.schema.dropTableIfExists('ingreso');
+    await knex.schema.dropTableIfExists('gastos');
+    await knex.schema.dropTableIfExists('ingresos');
 };

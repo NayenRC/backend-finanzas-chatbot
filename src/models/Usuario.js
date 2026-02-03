@@ -1,5 +1,6 @@
 import { Model } from "objection";
 import db from "../config/db.js";
+import crypto from "crypto";
 
 class Usuario extends Model {
 
@@ -12,6 +13,12 @@ class Usuario extends Model {
 
   static get idColumn() {
     return "user_id";
+  }
+
+  async $beforeInsert() {
+    if (!this.user_id) {
+      this.user_id = crypto.randomUUID();
+    }
   }
 
   /* =========================

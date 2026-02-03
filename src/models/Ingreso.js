@@ -1,14 +1,27 @@
-import Model from './Model.js';
+import { Model } from 'objection';
 import db from '../config/db.js';
-// Modelo para ingresos que representa los ingresos de un usuario
+import Categoria from './Categoria.js';
 
 class Ingreso extends Model {
   static get tableName() {
-    return 'ingreso';
+    return 'ingresos';
   }
 
-  static get primaryKey() {
+  static get idColumn() {
     return 'id_ingreso';
+  }
+
+  static get relationMappings() {
+    return {
+      categoria: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: Categoria,
+        join: {
+          from: 'ingresos.categoria_id',
+          to: 'categorias.id_categoria'
+        }
+      }
+    };
   }
 
   static async findByUser(user_id) {
@@ -42,3 +55,4 @@ class Ingreso extends Model {
 }
 
 export default Ingreso;
+

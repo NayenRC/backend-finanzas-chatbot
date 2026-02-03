@@ -2,7 +2,7 @@ export const up = async function (knex) {
     if (!(await knex.schema.hasTable('meta_ahorro'))) {
         await knex.schema.createTable('meta_ahorro', (table) => {
             table.increments('id_meta').primary();
-            table.uuid('user_id').notNullable().references('user_id').inTable('usuario').onDelete('CASCADE');
+            table.uuid('user_id').notNullable().references('user_id').inTable('usuarios').onDelete('CASCADE');
             table.string('nombre').notNullable();
             table.decimal('monto_objetivo', 14, 2).notNullable();
             table.decimal('monto_actual', 14, 2).defaultTo(0);

@@ -8,7 +8,7 @@ export const up = function (knex) {
         table.string('nombre').notNullable();
         table.string('descripcion');
         table.string('tipo').notNullable(); // 'GASTO' o 'INGRESO'
-        table.uuid('user_id').references('user_id').inTable('usuario').onDelete('CASCADE'); // Puede ser nulo para categorías globales
+        table.uuid('user_id').references('user_id').inTable('usuarios').onDelete('CASCADE'); // Puede ser nulo para categorías globales
         table.timestamps(true, true);
     });
 };

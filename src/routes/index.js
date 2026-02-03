@@ -12,6 +12,7 @@ import categoriasRoutes from "./categoriasRoutes.js";
 import dashboardRoutes from "./dashboardRoutes.js";
 import chatRoutes from "./chatRoutes.js";
 import { authenticateToken } from "../middlewares/authMiddleware.js";
+import AuthController from "../controllers/AuthController.js";
 
 const router = Router();
 

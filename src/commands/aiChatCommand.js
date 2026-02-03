@@ -9,6 +9,13 @@ import openRouterService from '../services/openRouterService.js';
 import supabaseService from '../services/supabaseService.js';
 
 /**
+ * Formatear monto en pesos chilenos (ej: $2.200.000)
+ */
+function formatCLP(amount) {
+    return Math.round(amount).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+/**
  * Process a chat message from the user
  */
 async function processMessage(userId, userMessage) {
@@ -105,12 +112,53 @@ async function handleExpenseRecording(userId, userMessage) {
         // Save expense to database
         const expense = await supabaseService.createExpense(userId, {
             monto: expenseData.monto,
-            descripcion: expenseData.descripcion,
+            descripcion: expenseData.descripcion || 'Gasto registrado',
             categoria_id: categoria?.id_categoria || null,
             fecha: new Date().toISOString().split('T')[0]
         });
 
-        return `¡Listo! ✨ He registrado tu gasto:\n\n💸 **Monto**: $${expenseData.monto.toLocaleString('es-CL')}\n📝 **Descripción**: ${expenseData.descripcion}\n🏷️ **Categoría**: ${categoria?.nombre || 'General'}\n\n¿Quieres registrar algo más o prefieres ver un resumen? 😊`;
+        // Calcular porcentaje disponible del mes
+        const today = new Date();
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        const daysRemaining = endOfMonth.getDate() - today.getDate();
+
+        const monthRange = {
+            startDate: startOfMonth.toISOString().split('T')[0],
+            endDate: today.toISOString().split('T')[0]
+        };
+
+        const incomeSummary = await supabaseService.getIncomeSummary(userId, monthRange);
+        const expenseSummary = await supabaseService.getExpenseSummary(userId, monthRange);
+
+        const totalIngresos = Number(incomeSummary?.total_monto || 0);
+        const totalGastos = Number(expenseSummary?.total_monto || 0);
+        const disponible = totalIngresos - totalGastos;
+
+        let budgetMessage = '';
+
+        if (totalIngresos > 0) {
+            const porcentajeDisponible = Math.round((disponible / totalIngresos) * 100);
+            const porcentajeGastado = 100 - porcentajeDisponible;
+
+            // Emoji según el estado
+            let statusEmoji = '🟢';
+            let motivationalMsg = '¡Vas muy bien!';
+
+            if (porcentajeDisponible <= 20) {
+                statusEmoji = '🔴';
+                motivationalMsg = '¡Cuidado! Queda poco presupuesto';
+            } else if (porcentajeDisponible <= 50) {
+                statusEmoji = '🟡';
+                motivationalMsg = 'Vas bien, pero ojo con los gastos';
+            }
+
+            budgetMessage = `\n\n📊 **Estado del mes**:\n${statusEmoji} Te queda **${porcentajeDisponible}%** disponible ($${formatCLP(disponible)})\n📅 Faltan **${daysRemaining} días** para fin de mes\n💡 ${motivationalMsg}`;
+        } else {
+            budgetMessage = `\n\n💡 **Tip**: Registra tus ingresos del mes para ver cuánto presupuesto te va quedando.`;
+        }
+
+        return `¡Listo! ✨ He registrado tu gasto:\n\n💸 **Monto**: $${formatCLP(expenseData.monto)}\n📝 **Descripción**: ${expenseData.descripcion || 'Gasto registrado'}\n🏷️ **Categoría**: ${categoria?.nombre || 'General'}${budgetMessage}`;
 
     } catch (error) {
         console.error('❌ Error registrando gasto:', error);
@@ -157,12 +205,12 @@ async function handleIncomeRecording(userId, userMessage) {
         // Save income to database
         const income = await supabaseService.createIncome(userId, {
             monto: incomeData.monto,
-            descripcion: incomeData.descripcion,
+            descripcion: incomeData.descripcion || 'Ingreso registrado',
             categoria_id: categoria?.id_categoria || null,
             fecha: new Date().toISOString().split('T')[0]
         });
 
-        return `¡Excelente! 🌟 He registrado tu ingreso:\n\n💰 **Monto**: $${incomeData.monto.toLocaleString('es-CL')}\n📝 **Descripción**: ${incomeData.descripcion}\n🏷️ **Categoría**: ${categoria?.nombre || 'General'}\n\n¡Qué bueno ver que tu balance crece! ¿Te gustaría revisar cómo van tus finanzas hoy?`;
+        return `¡Excelente! 🌟 He registrado tu ingreso:\n\n💰 **Monto**: $${formatCLP(incomeData.monto)}\n📝 **Descripción**: ${incomeData.descripcion || 'Ingreso registrado'}\n🏷️ **Categoría**: ${categoria?.nombre || 'General'}\n\n¡Qué bueno ver que tu balance crece! ¿Te gustaría revisar cómo van tus finanzas hoy?`;
 
     } catch (error) {
         console.error('❌ Error registrando ingreso:', error);

@@ -1,5 +1,5 @@
 
-import Model from './Model.js';
+import { Model } from 'objection';
 import db from '../config/db.js';
 
 // Modelo para mensajes de chat que representa los mensajes intercambiados en el chat
@@ -9,7 +9,7 @@ class ChatMensaje extends Model {
     return 'chat_mensaje';
   }
 
-  static get primaryKey() {
+  static get idColumn() {
     return 'id_chat';
   }
 

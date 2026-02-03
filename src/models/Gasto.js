@@ -1,13 +1,27 @@
-import Model from './Model.js';
+import { Model } from 'objection';
 import db from '../config/db.js';
+import Categoria from './Categoria.js';
 
 class Gasto extends Model {
   static get tableName() {
-    return 'gasto';
+    return 'gastos';
   }
 
-  static get primaryKey() {
+  static get idColumn() {
     return 'id_gasto';
+  }
+
+  static get relationMappings() {
+    return {
+      categoria: {
+        relation: Model.BelongsToOneRelation,
+        modelClass: Categoria,
+        join: {
+          from: 'gastos.categoria_id',
+          to: 'categorias.id_categoria'
+        }
+      }
+    };
   }
 
   static async findByUser(user_id) {
@@ -41,3 +55,4 @@ class Gasto extends Model {
 }
 
 export default Gasto;
+

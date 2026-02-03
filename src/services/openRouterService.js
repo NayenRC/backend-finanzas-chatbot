@@ -194,7 +194,12 @@ Eres SmartFin, un asistente financiero empático y profesional.
 Usa estos datos financieros para responder:
 ${JSON.stringify(financialData, null, 2)}
 
-Responde de forma clara, amigable y con montos bien formateados.
+IMPORTANTE: Formatea los montos en pesos chilenos usando:
+- Puntos como separador de miles (ej: $2.200.000)
+- Sin decimales
+- Símbolo $ antes del monto
+
+Responde de forma clara, amigable y concisa.
 `;
 
     const response = await this.sendMessage([
@@ -224,7 +229,7 @@ Explica brevemente que puedes ayudar a registrar gastos, ingresos y ver resúmen
     return response || '¡Hola! 👋 Puedo ayudarte con tus finanzas 😊';
   }
   async classifySavingGoal(userMessage) {
-  const systemPrompt = `
+    const systemPrompt = `
 Extrae información para crear una META DE AHORRO.
 
 Convierte expresiones chilenas:
@@ -243,24 +248,24 @@ Devuelve SOLO JSON:
 No inventes datos.
 `;
 
-  const response = await this.sendMessage([
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userMessage }
-  ], { temperature: 0.2 });
+    const response = await this.sendMessage([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage }
+    ], { temperature: 0.2 });
 
-  if (!response) return { error: true, sugerencia: 'No pude procesar la meta.' };
+    if (!response) return { error: true, sugerencia: 'No pude procesar la meta.' };
 
-  try {
-    return JSON.parse(response.match(/\{[\s\S]*\}/)[0]);
-  } catch {
-    return {
-      error: true,
-      sugerencia: 'No entendí la meta. Ejemplo: "ahorrar 500 lucas para vacaciones"'
-    };
+    try {
+      return JSON.parse(response.match(/\{[\s\S]*\}/)[0]);
+    } catch {
+      return {
+        error: true,
+        sugerencia: 'No entendí la meta. Ejemplo: "ahorrar 500 lucas para vacaciones"'
+      };
+    }
   }
-}
-async classifySavingGoal(userMessage) {
-  const systemPrompt = `
+  async classifySavingGoal(userMessage) {
+    const systemPrompt = `
 Extrae información para crear una META DE AHORRO.
 
 Convierte expresiones chilenas:
@@ -279,26 +284,26 @@ Devuelve SOLO JSON:
 No inventes datos.
 `;
 
-  const response = await this.sendMessage([
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userMessage }
-  ], { temperature: 0.2 });
+    const response = await this.sendMessage([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage }
+    ], { temperature: 0.2 });
 
-  if (!response) return { error: true, sugerencia: 'No pude procesar la meta.' };
+    if (!response) return { error: true, sugerencia: 'No pude procesar la meta.' };
 
-  try {
-    return JSON.parse(response.match(/\{[\s\S]*\}/)[0]);
-  } catch {
-    return {
-      error: true,
-      sugerencia: 'No entendí la meta. Ejemplo: "ahorrar 500 lucas para vacaciones"'
-    };
+    try {
+      return JSON.parse(response.match(/\{[\s\S]*\}/)[0]);
+    } catch {
+      return {
+        error: true,
+        sugerencia: 'No entendí la meta. Ejemplo: "ahorrar 500 lucas para vacaciones"'
+      };
+    }
   }
-}
-async classifySavingMovement(userMessage, metas = []) {
-  const metaList = metas.map(m => m.nombre).join(', ');
+  async classifySavingMovement(userMessage, metas = []) {
+    const metaList = metas.map(m => m.nombre).join(', ');
 
-  const systemPrompt = `
+    const systemPrompt = `
 Extrae información para un MOVIMIENTO DE AHORRO.
 
 Metas disponibles:
@@ -320,22 +325,22 @@ Devuelve SOLO JSON:
 No inventes datos.
 `;
 
-  const response = await this.sendMessage([
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userMessage }
-  ], { temperature: 0.2 });
+    const response = await this.sendMessage([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage }
+    ], { temperature: 0.2 });
 
-  if (!response) return { error: true, sugerencia: 'No pude procesar el ahorro.' };
+    if (!response) return { error: true, sugerencia: 'No pude procesar el ahorro.' };
 
-  try {
-    return JSON.parse(response.match(/\{[\s\S]*\}/)[0]);
-  } catch {
-    return {
-      error: true,
-      sugerencia: 'No entendí el ahorro. Ejemplo: "ahorré 50 lucas para el viaje"'
-    };
+    try {
+      return JSON.parse(response.match(/\{[\s\S]*\}/)[0]);
+    } catch {
+      return {
+        error: true,
+        sugerencia: 'No entendí el ahorro. Ejemplo: "ahorré 50 lucas para el viaje"'
+      };
+    }
   }
-}
 
 
 }

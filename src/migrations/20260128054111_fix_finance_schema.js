@@ -9,25 +9,25 @@ export const up = async function (knex) {
     if (hasCategorias) {
         await dropConstraintIfExists('categorias', 'user_id');
         await knex.schema.alterTable('categorias', (table) => {
-            table.uuid('user_id').alter().references('user_id').inTable('usuario').onDelete('CASCADE');
+            table.uuid('user_id').alter().references('user_id').inTable('usuarios').onDelete('CASCADE');
         });
     }
 
     // Corregir Gasto
-    const hasGasto = await knex.schema.hasTable('gasto');
+    const hasGasto = await knex.schema.hasTable('gastos');
     if (hasGasto) {
-        await dropConstraintIfExists('gasto', 'user_id');
-        await knex.schema.alterTable('gasto', (table) => {
-            table.uuid('user_id').alter().references('user_id').inTable('usuario').onDelete('CASCADE');
+        await dropConstraintIfExists('gastos', 'user_id');
+        await knex.schema.alterTable('gastos', (table) => {
+            table.uuid('user_id').alter().references('user_id').inTable('usuarios').onDelete('CASCADE');
         });
     }
 
     // Corregir Ingreso
-    const hasIngreso = await knex.schema.hasTable('ingreso');
+    const hasIngreso = await knex.schema.hasTable('ingresos');
     if (hasIngreso) {
-        await dropConstraintIfExists('ingreso', 'user_id');
-        await knex.schema.alterTable('ingreso', (table) => {
-            table.uuid('user_id').alter().references('user_id').inTable('usuario').onDelete('CASCADE');
+        await dropConstraintIfExists('ingresos', 'user_id');
+        await knex.schema.alterTable('ingresos', (table) => {
+            table.uuid('user_id').alter().references('user_id').inTable('usuarios').onDelete('CASCADE');
         });
     }
 };

@@ -1,4 +1,4 @@
-import Model from './Model.js';
+import { Model } from 'objection';
 import db from '../config/db.js';
 
 class Categoria extends Model {
@@ -6,7 +6,7 @@ class Categoria extends Model {
         return 'categorias';
     }
 
-    static get primaryKey() {
+    static get idColumn() {
         return 'id_categoria';
     }
 

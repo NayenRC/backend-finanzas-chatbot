@@ -6,7 +6,7 @@ export const up = async function (knex) {
             table.string('nombre').notNullable();
             table.string('tipo').notNullable(); // 'ingreso' o 'gasto'
             // Opcional: icon, color, etc.
-            table.uuid('user_id').nullable().references('user_id').inTable('usuario').onDelete('CASCADE');
+            table.uuid('user_id').nullable().references('user_id').inTable('usuarios').onDelete('CASCADE');
             table.timestamps(true, true);
         });
 
@@ -26,7 +26,7 @@ export const up = async function (knex) {
         const hasUserId = await knex.schema.hasColumn('categorias', 'user_id');
         if (!hasUserId) {
             await knex.schema.alterTable('categorias', (table) => {
-                table.uuid('user_id').nullable().references('user_id').inTable('usuario').onDelete('CASCADE');
+                table.uuid('user_id').nullable().references('user_id').inTable('usuarios').onDelete('CASCADE');
             });
         }
     }

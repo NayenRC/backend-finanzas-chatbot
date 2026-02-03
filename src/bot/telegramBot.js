@@ -95,13 +95,21 @@ if (global.telegramBot) {
         .replace(/####+\s*/g, '')
         .replace(/\*\*\*\*/g, '**');
 
-      await bot.sendMessage(chatId, cleanResponse, { parse_mode: 'Markdown' });
+      try {
+        await bot.sendMessage(chatId, cleanResponse, { parse_mode: 'Markdown' });
+      } catch (sendError) {
+        console.warn('⚠️ Error enviando Markdown, intentando texto plano:', sendError.message);
+        await bot.sendMessage(chatId, cleanResponse);
+      }
 
     } catch (error) {
       console.error('❌ ERROR COMPLETO:', error);
       console.error('❌ Error message:', error.message);
       console.error('❌ Error stack:', error.stack);
-      bot.sendMessage(chatId, `❌ Error procesando tu mensaje.\n\nDetalles: ${error.message}`);
+      bot.sendMessage(
+        chatId,
+        `❌ Error del sistema: ${error.message}`
+      );
     }
   });
 
