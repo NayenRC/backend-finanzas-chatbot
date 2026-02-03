@@ -3,7 +3,7 @@ import Gasto from '../models/Gasto.js';
 import Ingreso from '../models/Ingreso.js';
 import Categoria from '../models/Categoria.js';
 import Usuario from '../models/Usuario.js';
-
+import { createClient } from '@supabase/supabase-js';
 /* ==================================================
    DATA ACCESS LAYER
    Usa SOLO Objection.js / Knex
@@ -94,16 +94,14 @@ async function getIncomes(userId, range = {}) {
 
   return query;
 }
+// Usa los nombres exactos que tienes en Railway
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; 
 
-export default {
-  getChatHistory,
-  saveChatMessage,
-  getCategories,
-  findCategoryByName,
-  createExpense,
-  createIncome,
-  getExpenses,
-  getIncomes
-};
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+export default supabase; // 👈 Esto permite el import directo que pusimos arriba
+
+
 console.log("SUPABASE_URL:", !!process.env.SUPABASE_URL);
 console.log("SUPABASE_SERVICE_ROLE_KEY:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
