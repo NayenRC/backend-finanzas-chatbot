@@ -3,7 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import db from './config/db.js';
 import router from './routes/index.js';
-import { startTelegramBot } from './bot/telegramBot.js';
+import { startTelegramBot } from './bot/startTelegramBot.js';
 
 const app = express();
 
