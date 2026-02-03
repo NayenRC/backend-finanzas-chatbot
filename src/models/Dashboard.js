@@ -7,7 +7,7 @@ class Dashboard {
     static async getIncomeSummary(userId, filters = {}) {
         const { startDate, endDate } = filters;
 
-        let query = db('ingreso')
+        let query = db('ingresos')
             .where('user_id', userId)
             .select(
                 db.raw('COUNT(*) as total_ingresos'),
@@ -32,7 +32,7 @@ class Dashboard {
     static async getExpenseSummary(userId, filters = {}) {
         const { startDate, endDate } = filters;
 
-        let query = db('gasto')
+        let query = db('gastos')
             .where('user_id', userId)
             .select(
                 db.raw('COUNT(*) as total_gastos'),
@@ -57,8 +57,8 @@ class Dashboard {
     static async getExpensesByCategory(userId, filters = {}) {
         const { startDate, endDate } = filters;
 
-        let query = db('gasto')
-            .leftJoin('categorias', 'gasto.categoria_id', 'categorias.id_categoria')
+        let query = db('gastos')
+            .leftJoin('categorias', 'gastos.categoria_id', 'categorias.id_categoria')
             .where('gasto.user_id', userId)
             .select(
                 'categorias.nombre as categoria',

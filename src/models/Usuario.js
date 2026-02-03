@@ -48,10 +48,9 @@ class Usuario extends Model {
       .orderBy('nombre', 'asc');
   }
   static async findByEmail(email) {
-    return await db(this.tableName)
-      .where({ email })
-      .first();
+    return this.query().findOne({ email });
   }
+
 }
 
 export default Usuario;

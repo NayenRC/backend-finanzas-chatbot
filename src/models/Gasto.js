@@ -1,4 +1,5 @@
 import Model from './Model.js';
+import Categoria from './Categoria.js';
 
 class Gasto extends Model {
   static get tableName() {
@@ -16,9 +17,9 @@ class Gasto extends Model {
         modelClass: Categoria,
         join: {
           from: 'gastos.categoria_id',
-          to: 'categorias.id_categoria'
-        }
-      }
+          to: 'categorias.id_categoria',
+        },
+      },
     };
   }
 
@@ -27,30 +28,26 @@ class Gasto extends Model {
       .where('user_id', user_id)
       .orderBy('fecha', 'desc');
   }
-
   static async findByIdAndUser(id, user_id) {
-    return db(this.tableName)
-      .where(this.primaryKey, id)
+    return this.query()
+      .where('id_gasto', id)
       .andWhere('user_id', user_id)
       .first();
   }
 
+
   static async updateByUser(id, user_id, data) {
-    const [result] = await db(this.tableName)
-      .where(this.primaryKey, id)
-      .andWhere('user_id', user_id)
-      .update(data)
-      .returning('*');
-    return result;
+    return this.query()
+      .patchAndFetchById(id, data)
+      .where('user_id', user_id);
   }
 
   static async deleteByUser(id, user_id) {
-    return db(this.tableName)
-      .where(this.primaryKey, id)
-      .andWhere('user_id', user_id)
-      .del();
+    return this.query()
+      .delete()
+      .where(this.idColumn, id)
+      .andWhere('user_id', user_id);
   }
 }
 
 export default Gasto;
-
