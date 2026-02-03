@@ -1,13 +1,9 @@
-import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
-import { Model } from 'objection';
-
 import db from './config/db.js';
 import router from './routes/index.js';
-
-Model.knex(db);
+import { startTelegramBot } from './bot/startTelegramBot.js';
 
 const app = express();
 
@@ -17,15 +13,12 @@ app.use(morgan('dev'));
 
 app.use('/api', router);
 
-// 🚀 EXPRESS PRIMERO
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`🚀 Backend running on port ${PORT}`);
+  console.log('🚀 Backend running');
 });
 
-// 🤖 BOT DESPUÉS (NO BLOQUEA)
+// 🔥 BOT DESPUÉS DEL SERVER
 if (process.env.ENABLE_TELEGRAM === 'true') {
-  import('./bot/startTelegramBot.js')
-    .then(m => m.startTelegramBot())
-    .catch(err => console.error('❌ Error iniciando bot:', err));
+  startTelegramBot();
 }

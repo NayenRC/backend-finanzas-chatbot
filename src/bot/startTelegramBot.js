@@ -4,7 +4,7 @@ import Usuario from '../models/Usuario.js';
 
 export function startTelegramBot() {
   if (!process.env.TELEGRAM_BOT_TOKEN) {
-    console.warn('⚠️ TELEGRAM_BOT_TOKEN no definido, bot deshabilitado');
+    console.warn('⚠️ TELEGRAM_BOT_TOKEN no definido');
     return;
   }
 
@@ -24,10 +24,7 @@ export function startTelegramBot() {
     if (!usuario) {
       usuario = await Usuario.query().insert({
         telegram_id: telegramId,
-        nombre:
-          telegramUser.first_name ||
-          telegramUser.username ||
-          'Usuario Telegram',
+        nombre: telegramUser.first_name || telegramUser.username || 'Usuario Telegram',
         activo: true,
       });
     }
@@ -52,22 +49,18 @@ export function startTelegramBot() {
 
       const result = await chatBotFinanceService.processMessage(userId, text);
 
-      const response =
-        result?.response ||
-        'Hola 👋 Estoy activo, pero ahora mismo no puedo responder con IA.';
-
-      await bot.sendMessage(chatId, response);
-    } catch (error) {
-      console.error('❌ TELEGRAM BOT ERROR:', error);
       await bot.sendMessage(
         chatId,
-        'Tuve un problema interno 😕 Intenta nuevamente.'
+        result?.response || 'Estoy activo pero no pude responder 🤖'
       );
+    } catch (err) {
+      console.error('❌ BOT ERROR:', err);
+      await bot.sendMessage(chatId, 'Error interno 😕');
     }
   });
 
-  bot.on('polling_error', (error) => {
-    console.error('❌ Polling error:', error.message);
+  bot.on('polling_error', (e) => {
+    console.error('❌ Polling error:', e.message);
   });
 
   console.log('💬 Bot listo para recibir mensajes');

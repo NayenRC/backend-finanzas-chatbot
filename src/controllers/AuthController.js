@@ -1,4 +1,4 @@
-import supabase from '../services/supabaseService.js'; 
+import supabase from '../services/supabaseService.js';
 import { v4 as uuidv4 } from 'uuid';
 import Usuario from '../models/Usuario.js';
 // import emailService from '../services/emailService.js'; // si lo usas
