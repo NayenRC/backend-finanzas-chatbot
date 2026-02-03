@@ -1,11 +1,8 @@
-// services/ChatbotFinanceService.js (antes aiChatCommand)
-
 import openRouterService from '../services/openRouterService.js';
 import ChatMensaje from '../models/ChatMensaje.js';
 import Ingreso from '../models/Ingreso.js';
 import Categoria from '../models/Categoria.js';
 import Gasto from '../models/Gasto.js';
-import openRouterService from '../services/openRouterService.js';
 import MetaAhorroService from '../services/metaAhorroService.js';
 import MetaAhorro from '../models/MetaAhorro.js';
 
@@ -26,7 +23,7 @@ async function processMessage(userId, userMessage) {
         /* ===============================
            Guardar mensaje del usuario
         =============================== */
-        await ChatMensaje.create({
+        await ChatMensaje.query().insert({
             user_id: userId,
             mensaje: userMessage,
             es_bot: false
@@ -87,7 +84,7 @@ async function processMessage(userId, userMessage) {
         /* ===============================
            Guardar respuesta del bot
         =============================== */
-        await ChatMensaje.create({
+        await ChatMensaje.query().insert({
             user_id: userId,
             mensaje: response,
             es_bot: true
@@ -105,7 +102,7 @@ async function processMessage(userId, userMessage) {
         const fallback =
             'Lo siento, tuve un problema al procesar tu mensaje 😕';
 
-        await ChatMensaje.create({
+        await ChatMensaje.query().insert({
             user_id: userId,
             mensaje: fallback,
             es_bot: true
@@ -179,7 +176,7 @@ async function handleExpenseRecording(userId, userMessage) {
         /* ===============================
           Guardar gasto
         =============================== */
-        await Gasto.create({
+        await Gasto.query().insert({
             user_id: userId,
             monto: expenseData.monto,
             descripcion: expenseData.descripcion || 'Gasto registrado por chatbot',
@@ -263,7 +260,7 @@ async function handleIncomeRecording(userId, userMessage) {
         /* ===============================
            Guardar ingreso
         =============================== */
-        await Ingreso.create({
+        await Ingreso.query().insert({
             user_id: userId,
             monto: incomeData.monto,
             descripcion: incomeData.descripcion || 'Ingreso registrado por chatbot',
@@ -288,27 +285,13 @@ async function handleIncomeRecording(userId, userMessage) {
     }
 }
 
-import Gasto from '../models/Gasto.js';
-import Ingreso from '../models/Ingreso.js';
-import Categoria from '../models/Categoria.js';
-import openRouterService from '../services/openRouterService.js';
-
 async function handleQuery(userId, userMessage, chatHistory) {
     try {
-        /* ===============================
-           Determinar rango de fechas
-        =============================== */
         const timeRange = extractTimeRange(userMessage);
 
-        /* ===============================
-           Obtener datos base
-        =============================== */
         let gastos = await Gasto.findByUser(userId);
         let ingresos = await Ingreso.findByUser(userId);
 
-        /* ===============================
-            Filtrar por fechas (si aplica)
-        =============================== */
         if (timeRange.startDate && timeRange.endDate) {
             gastos = gastos.filter(g =>
                 g.fecha >= timeRange.startDate &&
@@ -321,9 +304,6 @@ async function handleQuery(userId, userMessage, chatHistory) {
             );
         }
 
-        /* ===============================
-           Calcular totales
-        =============================== */
         const totalGastos = gastos.reduce(
             (sum, g) => sum + Number(g.monto || 0), 0
         );
@@ -334,9 +314,6 @@ async function handleQuery(userId, userMessage, chatHistory) {
 
         const balance = totalIngresos - totalGastos;
 
-        /* ===============================
-           Agrupar gastos por categoría
-        =============================== */
         const categorias = await Categoria.findByUser(userId);
 
         const gastosPorCategoria = categorias.map(cat => {
@@ -350,9 +327,6 @@ async function handleQuery(userId, userMessage, chatHistory) {
             };
         }).filter(c => c.total > 0);
 
-        /* ===============================
-           Preparar payload para IA
-        =============================== */
         const financialData = {
             periodo: timeRange.label || 'todos los registros',
             resumen: {
@@ -366,9 +340,6 @@ async function handleQuery(userId, userMessage, chatHistory) {
             gastos_por_categoria: gastosPorCategoria
         };
 
-        /* ==============================
-           Respuesta natural con IA
-        =============================== */
         const response =
             await openRouterService.generateQueryResponse(
                 userMessage,
@@ -382,130 +353,94 @@ async function handleQuery(userId, userMessage, chatHistory) {
         console.error('❌ Error en handleQuery:', error);
         return 'Tuve un problema al consultar tus datos financieros 😕';
     }
+}
 
-    async function handleCreateSavingGoal(userId, userMessage) {
-        try {
-            const goalData =
-                await OpenRouterService.classifySavingGoal(userMessage);
+async function handleCreateSavingGoal(userId, userMessage) {
+    try {
+        const goalData =
+            await openRouterService.classifySavingGoal(userMessage);
 
-            if (goalData.error) {
-                return goalData.sugerencia ||
-                    'Para crear una meta necesito el monto y el objetivo 😊';
+        if (goalData.error) {
+            return goalData.sugerencia ||
+                'Para crear una meta necesito el monto y el objetivo 😊';
+        }
+
+        if (
+            goalData.info_faltante &&
+            goalData.info_faltante.length > 0
+        ) {
+            if (goalData.info_faltante.includes('monto_objetivo')) {
+                return `Entiendo la meta **${goalData.nombre || ''}**, pero me falta el monto 💰 ¿Cuánto quieres ahorrar?`;
             }
+        }
 
-            if (
-                goalData.info_faltante &&
-                goalData.info_faltante.length > 0
-            ) {
-                if (goalData.info_faltante.includes('monto_objetivo')) {
-                    return `Entiendo la meta **${goalData.nombre || ''}**, pero me falta el monto 💰 ¿Cuánto quieres ahorrar?`;
-                }
-            }
+        const meta = await MetaAhorroService.crearMeta(userId, {
+            nombre: goalData.nombre,
+            monto_objetivo: goalData.monto_objetivo
+        });
 
-            const meta = await MetaAhorroService.crearMeta(userId, {
-                nombre: goalData.nombre,
-                monto_objetivo: goalData.monto_objetivo
-            });
-
-            return `🎯 **Meta de ahorro creada con éxito**
+        return `🎯 **Meta de ahorro creada con éxito**
 
 📌 **Objetivo**: ${meta.nombre}
 💰 **Monto objetivo**: $${meta.monto_objetivo.toLocaleString('es-CL')}
 
 ¡Vamos paso a paso! 💪 ¿Quieres agregar un primer ahorro a esta meta?`;
 
-        } catch (error) {
-            console.error('❌ Error creando meta:', error);
-            return 'Tuve un problema al crear la meta 😕 ¿Lo intentamos de nuevo?';
-        }
+    } catch (error) {
+        console.error('❌ Error creando meta:', error);
+        return 'Tuve un problema al crear la meta 😕 ¿Lo intentamos de nuevo?';
     }
-
-    async function handleCreateSavingGoal(userId, userMessage) {
-        try {
-            const goalData =
-                await OpenRouterService.classifySavingGoal(userMessage);
-
-            if (goalData.error) {
-                return goalData.sugerencia ||
-                    'Para crear una meta necesito el monto y el objetivo 😊';
-            }
-
-            if (
-                goalData.info_faltante &&
-                goalData.info_faltante.length > 0
-            ) {
-                if (goalData.info_faltante.includes('monto_objetivo')) {
-                    return `Entiendo la meta **${goalData.nombre || ''}**, pero me falta el monto 💰 ¿Cuánto quieres ahorrar?`;
-                }
-            }
-
-            const meta = await MetaAhorroService.crearMeta(userId, {
-                nombre: goalData.nombre,
-                monto_objetivo: goalData.monto_objetivo
-            });
-
-            return `🎯 **Meta de ahorro creada con éxito**
-
-📌 **Objetivo**: ${meta.nombre}
-💰 **Monto objetivo**: $${meta.monto_objetivo.toLocaleString('es-CL')}
-
-¡Vamos paso a paso! 💪 ¿Quieres agregar un primer ahorro a esta meta?`;
-
-        } catch (error) {
-            console.error('❌ Error creando meta:', error);
-            return 'Tuve un problema al crear la meta 😕 ¿Lo intentamos de nuevo?';
-        }
-    }
+}
 
 async function handleAddToSavingGoal(userId, userMessage) {
-  try {
-    // 1️⃣ Obtener metas del usuario
-    const metas = await MetaAhorro.findByUser(userId);
+    try {
+        // 1️⃣ Obtener metas del usuario
+        const metas = await MetaAhorro.findByUser(userId);
 
-    if (!metas.length) {
-      return 'Aún no tienes metas de ahorro creadas 😕 ¿Quieres crear una?';
-    }
+        if (!metas.length) {
+            return 'Aún no tienes metas de ahorro creadas 😕 ¿Quieres crear una?';
+        }
 
-    // 2️⃣ IA extrae datos
-    const data =
-      await OpenRouterService.classifySavingMovement(userMessage, metas);
+        // 2️⃣ IA extrae datos
+        const data =
+            await openRouterService.classifySavingMovement(userMessage, metas);
 
-    if (data.error) {
-      return data.sugerencia ||
-        'Para agregar un ahorro dime el monto y la meta 💰';
-    }
+        if (data.error) {
+            return data.sugerencia ||
+                'Para agregar un ahorro dime el monto y la meta 💰';
+        }
 
-    if (!data.monto || isNaN(data.monto)) {
-      return '¿Cuánto deseas agregar a la meta? 💰';
-    }
+        if (!data.monto || isNaN(data.monto)) {
+            return '¿Cuánto deseas agregar a la meta? 💰';
+        }
 
-    // 3️⃣ Resolver meta
-    let meta = null;
+        // 3️⃣ Resolver meta
+        let meta = null;
 
-    if (data.meta) {
-      meta = metas.find(m =>
-        m.nombre.toLowerCase().includes(data.meta.toLowerCase())
-      );
-    }
+        if (data.meta) {
+            meta = metas.find(m =>
+                m.nombre.toLowerCase().includes(data.meta.toLowerCase())
+            );
+        }
 
-    if (!meta) {
-      return `No pude identificar la meta 😕 Tus metas son: ${metas.map(m => m.nombre).join(', ')}`;
-    }
+        if (!meta) {
+            return `No pude identificar la meta 😕 Tus metas son: ${metas.map(m => m.nombre).join(', ')}`;
+        }
 
-    // 4️⃣ Registrar movimiento (service de negocio)
-    const result = await MetaAhorroService.agregarMovimiento(
-      meta.id_meta,
-      userId,
-      data.monto,
-      new Date().toISOString().split('T')[0]
-    );
+        // 4️⃣ Registrar movimiento (service de negocio)
+        const result = await MetaAhorroService.agregarMovimiento(
+            meta.id_meta,
+            userId,
+            data.monto,
+            new Date().toISOString().split('T')[0]
+        );
 
-    const progreso = Math.min(
-      (result.progreso.actual / result.progreso.objetivo) * 100,
-      100
-    ).toFixed(1);
+        const progreso = Math.min(
+            (result.progreso.actual / result.progreso.objetivo) * 100,
+            100
+        ).toFixed(1);
 
-    return `💰 **Ahorro agregado con éxito**
+        return `💰 **Ahorro agregado con éxito**
 
 🎯 **Meta**: ${meta.nombre}
 ➕ **Aporte**: $${data.monto.toLocaleString('es-CL')}
@@ -513,14 +448,67 @@ async function handleAddToSavingGoal(userId, userMessage) {
 
 ¡Excelente constancia! 💪✨`;
 
-  } catch (error) {
-    console.error('❌ Error agregando ahorro:', error);
-    return 'Tuve un problema al registrar el ahorro 😕 ¿Lo intentamos de nuevo?';
-  }
+    } catch (error) {
+        console.error('❌ Error agregando ahorro:', error);
+        return 'Tuve un problema al registrar el ahorro 😕 ¿Lo intentamos de nuevo?';
+    }
 }
 
 
+/**
+ * Extract time range from user message
+ */
+function extractTimeRange(message) {
+    const today = new Date();
+    const messageLower = message.toLowerCase();
+
+    // Today
+    if (messageLower.includes('hoy')) {
+        return {
+            startDate: today.toISOString().split('T')[0],
+            endDate: today.toISOString().split('T')[0],
+            label: 'hoy'
+        };
+    }
+
+    // This week
+    if (messageLower.includes('semana')) {
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        return {
+            startDate: startOfWeek.toISOString().split('T')[0],
+            endDate: today.toISOString().split('T')[0],
+            label: 'esta semana'
+        };
+    }
+
+    // This month
+    if (messageLower.includes('mes')) {
+        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        return {
+            startDate: startOfMonth.toISOString().split('T')[0],
+            endDate: today.toISOString().split('T')[0],
+            label: 'este mes'
+        };
+    }
+
+    // Last 7 days
+    if (messageLower.includes('últimos') || messageLower.includes('ultimos')) {
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        return {
+            startDate: sevenDaysAgo.toISOString().split('T')[0],
+            endDate: today.toISOString().split('T')[0],
+            label: 'últimos 7 días'
+        };
+    }
+
+    // Default: all time
+    return {
+        label: 'todos los registros'
+    };
 }
+
 export default {
     processMessage
 };

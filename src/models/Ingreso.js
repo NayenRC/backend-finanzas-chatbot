@@ -1,6 +1,4 @@
-import { Model } from 'objection';
-import db from '../config/db.js';
-import Categoria from './Categoria.js';
+import Model from './Model.js';
 
 class Ingreso extends Model {
   static get tableName() {
@@ -25,7 +23,7 @@ class Ingreso extends Model {
   }
 
   static async findByUser(user_id) {
-    return db(this.tableName)
+    return this.query()
       .where('user_id', user_id)
       .orderBy('fecha', 'desc');
   }

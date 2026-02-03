@@ -1,5 +1,4 @@
-import { Model } from "objection";
-import db from "../config/db.js";
+import Model from "./Model.js";
 import crypto from "crypto";
 
 class Usuario extends Model {
@@ -41,6 +40,13 @@ class Usuario extends Model {
   /* =========================
      Métodos custom
   ========================= */
+  static async findByUser(user_id) {
+    return this.query()
+      .where(function () {
+        this.where('user_id', user_id).orWhereNull('user_id');
+      })
+      .orderBy('nombre', 'asc');
+  }
   static async findByEmail(email) {
     return await db(this.tableName)
       .where({ email })

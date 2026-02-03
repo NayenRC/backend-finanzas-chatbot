@@ -1,5 +1,4 @@
-import { Model } from 'objection';
-import db from '../config/db.js';
+import Model from './Model.js';
 
 class Categoria extends Model {
     static get tableName() {
@@ -11,7 +10,7 @@ class Categoria extends Model {
     }
 
     static async findByUser(user_id) {
-        return db(this.tableName)
+        return this.query()
             .where(function () {
                 this.where('user_id', user_id).orWhereNull('user_id');
             })

@@ -76,7 +76,6 @@ Posibles intenciones:
 - REGISTRAR_INGRESO
 - CONSULTAR
 - CREAR_META_AHORRO
-- CREAR_META_AHORRO
 - AGREGAR_A_META
 - OTRO
 
@@ -228,6 +227,7 @@ Explica brevemente que puedes ayudar a registrar gastos, ingresos y ver resúmen
 
     return response || '¡Hola! 👋 Puedo ayudarte con tus finanzas 😊';
   }
+
   async classifySavingGoal(userMessage) {
     const systemPrompt = `
 Extrae información para crear una META DE AHORRO.
@@ -264,42 +264,7 @@ No inventes datos.
       };
     }
   }
-  async classifySavingGoal(userMessage) {
-    const systemPrompt = `
-Extrae información para crear una META DE AHORRO.
 
-Convierte expresiones chilenas:
-- "500 lucas" → 500000
-- "1 palo" → 1000000
-
-Devuelve SOLO JSON:
-{
-  "nombre": string | null,
-  "monto_objetivo": number | null,
-  "info_faltante": string[],
-  "error": boolean,
-  "sugerencia": string | null
-}
-
-No inventes datos.
-`;
-
-    const response = await this.sendMessage([
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userMessage }
-    ], { temperature: 0.2 });
-
-    if (!response) return { error: true, sugerencia: 'No pude procesar la meta.' };
-
-    try {
-      return JSON.parse(response.match(/\{[\s\S]*\}/)[0]);
-    } catch {
-      return {
-        error: true,
-        sugerencia: 'No entendí la meta. Ejemplo: "ahorrar 500 lucas para vacaciones"'
-      };
-    }
-  }
   async classifySavingMovement(userMessage, metas = []) {
     const metaList = metas.map(m => m.nombre).join(', ');
 
@@ -341,8 +306,6 @@ No inventes datos.
       };
     }
   }
-
-
 }
 
 export default new OpenRouterService();

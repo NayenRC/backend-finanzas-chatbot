@@ -1,8 +1,4 @@
-
-import { Model } from 'objection';
-import db from '../config/db.js';
-
-// Modelo para mensajes de chat que representa los mensajes intercambiados en el chat
+import Model from './Model.js';
 
 class ChatMensaje extends Model {
   static get tableName() {
@@ -14,7 +10,7 @@ class ChatMensaje extends Model {
   }
 
   static async findByUser(user_id) {
-    return db(this.tableName)
+    return this.query()
       .where('user_id', user_id)
       .orderBy('creado_en', 'asc');
   }
