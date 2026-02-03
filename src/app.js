@@ -6,7 +6,9 @@ import { Model } from 'objection';
 
 import db from './config/db.js';
 import router from './routes/index.js';
-import './bot/telegramBot.js'; // 🤖 Inicializar Bot Telegram
+if (process.env.ENABLE_TELEGRAM === 'true') {
+  import('./bot/telegramBot.js');
+}
 
 Model.knex(db);
 
