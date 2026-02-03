@@ -14,7 +14,6 @@ import chatRoutes from "./chatRoutes.js";
 
 import AuthController from "../controllers/AuthController.js";
 import { authenticateToken } from "../middlewares/authMiddleware.js";
-import AuthController from "../controllers/AuthController.js";
 
 const router = Router();
 
