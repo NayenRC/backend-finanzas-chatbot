@@ -56,11 +56,10 @@ class OpenRouterService {
       return response.data.choices[0].message.content;
 
     } catch (error) {
-      console.error(
-        '❌ Error comunicándose con OpenRouter:',
-        error.response?.data || error.message
-      );
-      return null;
+      console.error('❌ OPENROUTER ERROR:');
+      console.error(error?.message);
+      console.error(error?.response?.data || error);
+      throw error;
     }
   }
 
@@ -90,12 +89,12 @@ Responde SOLO con JSON:
       { role: 'user', content: userMessage }
     ], { temperature: 0.2, max_tokens: 100 });
 
-    if (!response) return { intencion: 'OTRO', confianza: 0.5 };
+    if (!response) throw new Error('No hay respuesta de OpenRouter (Intento)');
 
     try {
       return JSON.parse(response.match(/\{[\s\S]*\}/)[0]);
     } catch {
-      return { intencion: 'OTRO', confianza: 0.5 };
+      throw new Error('Error parseando respuesta JSON de OpenRouter (Intento)');
     }
   }
 
@@ -132,12 +131,12 @@ Reglas:
       { role: 'user', content: userMessage }
     ], { temperature: 0.3 });
 
-    if (!response) return { error: true, sugerencia: 'No pude procesar el gasto.' };
+    if (!response) throw new Error('No hay respuesta de OpenRouter (Gasto)');
 
     try {
       return JSON.parse(response.match(/\{[\s\S]*\}/)[0]);
     } catch {
-      return { error: true, sugerencia: 'No pude entender el gasto. ¿Puedes repetirlo?' };
+      throw new Error('Error parseando respuesta JSON de OpenRouter (Gasto)');
     }
   }
 
@@ -174,12 +173,12 @@ Devuelve SOLO JSON:
       { role: 'user', content: userMessage }
     ], { temperature: 0.2 });
 
-    if (!response) return { error: true, sugerencia: 'No pude procesar el ingreso.' };
+    if (!response) throw new Error('No hay respuesta de OpenRouter (Ingreso)');
 
     try {
       return JSON.parse(response.match(/\{[\s\S]*\}/)[0]);
     } catch {
-      return { error: true, sugerencia: 'No pude entender el ingreso. ¿Puedes repetirlo?' };
+      throw new Error('Error parseando respuesta JSON de OpenRouter (Ingreso)');
     }
   }
 
@@ -207,7 +206,7 @@ Responde de forma clara, amigable y concisa.
       { role: 'user', content: userMessage }
     ], { temperature: 0.7, max_tokens: 500 });
 
-    return response || 'No pude generar una respuesta en este momento.';
+    return response;
   }
 
   /* ===============================
@@ -225,7 +224,7 @@ Explica brevemente que puedes ayudar a registrar gastos, ingresos y ver resúmen
       { role: 'user', content: userMessage }
     ], { temperature: 0.8, max_tokens: 200 });
 
-    return response || '¡Hola! 👋 Puedo ayudarte con tus finanzas 😊';
+    return response;
   }
 
   async classifySavingGoal(userMessage) {
@@ -253,15 +252,12 @@ No inventes datos.
       { role: 'user', content: userMessage }
     ], { temperature: 0.2 });
 
-    if (!response) return { error: true, sugerencia: 'No pude procesar la meta.' };
+    if (!response) throw new Error('No hay respuesta de OpenRouter (Meta)');
 
     try {
       return JSON.parse(response.match(/\{[\s\S]*\}/)[0]);
     } catch {
-      return {
-        error: true,
-        sugerencia: 'No entendí la meta. Ejemplo: "ahorrar 500 lucas para vacaciones"'
-      };
+      throw new Error('Error parseando respuesta JSON de OpenRouter (Meta)');
     }
   }
 
@@ -295,15 +291,12 @@ No inventes datos.
       { role: 'user', content: userMessage }
     ], { temperature: 0.2 });
 
-    if (!response) return { error: true, sugerencia: 'No pude procesar el ahorro.' };
+    if (!response) throw new Error('No hay respuesta de OpenRouter (Movimiento)');
 
     try {
       return JSON.parse(response.match(/\{[\s\S]*\}/)[0]);
     } catch {
-      return {
-        error: true,
-        sugerencia: 'No entendí el ahorro. Ejemplo: "ahorré 50 lucas para el viaje"'
-      };
+      throw new Error('Error parseando respuesta JSON de OpenRouter (Movimiento)');
     }
   }
 }

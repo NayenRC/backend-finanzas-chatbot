@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import TelegramBot from 'node-telegram-bot-api';
-import aiChatCommand from '../commands/aiChatCommand.js';
+import chatBotFinanceService from '../services/chatBotFinanceService.js';
 import Usuario from '../models/Usuario.js';
 
 if (!process.env.TELEGRAM_BOT_TOKEN) {
@@ -89,7 +89,7 @@ if (global.telegramBot) {
 
       await bot.sendChatAction(chatId, 'typing');
 
-      const result = await aiChatCommand.processMessage(userId, text);
+      const result = await chatBotFinanceService.processMessage(userId, text);
 
       let cleanResponse = result.response
         .replace(/####+\s*/g, '')
@@ -103,13 +103,11 @@ if (global.telegramBot) {
       }
 
     } catch (error) {
-      console.error('❌ ERROR COMPLETO:', error);
-      console.error('❌ Error message:', error.message);
-      console.error('❌ Error stack:', error.stack);
-      bot.sendMessage(
-        chatId,
-        `❌ Error del sistema: ${error.message}`
-      );
+      console.error('❌ TELEGRAM BOT ERROR:', error);
+      const fallback = "Hola 👋 Tuve un pequeño problema técnico, pero ya estoy informando al equipo. " +
+        "Puedes seguir intentando o registrar tus datos manualmente 😊";
+
+      bot.sendMessage(chatId, fallback);
     }
   });
 

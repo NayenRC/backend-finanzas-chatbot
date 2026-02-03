@@ -7,7 +7,7 @@
 import TelegramBot from 'node-telegram-bot-api';
 import Usuario from '../models/Usuario.js';
 import jwt from 'jsonwebtoken';
-import aiChatCommand from '../commands/aiChatCommand.js';
+import chatBotFinanceService from '../services/chatBotFinanceService.js';
 import supabaseService from '../services/supabaseService.js';
 
 // SECRET para JWT (debería ir en .env)
@@ -84,7 +84,7 @@ const chat = async (req, res) => {
     }
 
     // Procesar mensaje con AI Command
-    const result = await aiChatCommand.processMessage(user_id, mensaje);
+    const result = await chatBotFinanceService.processMessage(user_id, mensaje);
 
     return res.json(result);
 
@@ -107,7 +107,7 @@ const getBalance = async (req, res) => {
     // 1. Obtenemos totales HISTÓRICOS (sin filtro de fecha)
     const expenseSummary = await supabaseService.getExpenseSummary(user_id);
     const incomeSummary = await supabaseService.getIncomeSummary(user_id);
-    
+
     // 2. Obtenemos los últimos 10 movimientos para la lista
     const expensesList = await supabaseService.getExpenses(user_id, { limit: 10 });
     const incomesList = await supabaseService.getIncomes(user_id, { limit: 10 });
@@ -124,7 +124,7 @@ const getBalance = async (req, res) => {
     // --- GENERACIÓN DE GRÁFICO ---
     // Calculamos disponible (si es negativo, es 0 para el gráfico)
     const disponible = balance > 0 ? balance : 0;
-    
+
     const chartConfig = {
       type: 'pie',
       data: {

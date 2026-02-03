@@ -45,7 +45,7 @@ export const store = async (req, res) => {
     }
 
     // 2. Definir que NO es un mensaje del bot (es del usuario)
-    data.es_bot = false;
+    data.rol = 'user';
 
     // Validación
     if (!data.user_id || !data.mensaje) {

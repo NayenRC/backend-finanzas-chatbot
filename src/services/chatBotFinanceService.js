@@ -16,79 +16,88 @@ async function processMessage(userId, userMessage) {
         const formattedHistory = chatHistory
             .slice(-6)
             .map(msg => ({
-                role: msg.es_bot ? 'assistant' : 'user',
+                role: msg.rol,
                 content: msg.mensaje
             }));
 
         /* ===============================
            Guardar mensaje del usuario
         =============================== */
-        await ChatMensaje.query().insert({
-            user_id: userId,
-            mensaje: userMessage,
-            es_bot: false
-        });
+        try {
+            console.log(`💾 Guardando mensaje de usuario ${userId}`);
+            await ChatMensaje.query().insert({
+                user_id: userId,
+                mensaje: userMessage,
+                rol: 'user'
+            });
+        } catch (dbError) {
+            console.error('⚠️ No se pudo guardar mensaje del usuario en BD:', dbError.message);
+        }
 
         /* ===============================
           Detectar intención con IA
         =============================== */
-        const { intencion, confianza } =
-            await openRouterService.analyzeIntent(userMessage);
+        let intencion = 'OTRO';
+        let confianza = 0.5;
+
+        try {
+            const intentResult = await openRouterService.analyzeIntent(userMessage);
+            intencion = intentResult.intencion;
+            confianza = intentResult.confianza;
+        } catch (error) {
+            console.warn('⚠️ No se pudo analizar intención, usando fallback "OTRO"');
+        }
 
         console.log(`🤖 Intención: ${intencion} (${confianza})`);
 
         let response;
+        const fallbackMessage = "Hola 👋 Estoy activo, pero ahora mismo no puedo responder con IA. " +
+            "Puedes registrar gastos, ingresos o metas y seguiré funcionando 😊";
 
         /* ===============================
            Ruteo por intención
         =============================== */
-        switch (intencion) {
-            case 'REGISTRAR_GASTO':
-                response = await handleExpenseRecording(
-                    userId,
-                    userMessage
-                );
-                break;
+        try {
+            switch (intencion) {
+                case 'REGISTRAR_GASTO':
+                    response = await handleExpenseRecording(userId, userMessage);
+                    break;
+                case 'REGISTRAR_INGRESO':
+                    response = await handleIncomeRecording(userId, userMessage);
+                    break;
+                case 'CREAR_META_AHORRO':
+                    response = await handleCreateSavingGoal(userId, userMessage);
+                    break;
+                case 'AGREGAR_A_META':
+                    response = await handleAddToSavingGoal(userId, userMessage);
+                    break;
+                case 'CONSULTAR':
+                    response = await handleQuery(userId, userMessage, formattedHistory);
+                    break;
+                default:
+                    response = await openRouterService.generateGeneralResponse(userMessage, formattedHistory);
+            }
 
-            case 'REGISTRAR_INGRESO':
-                response = await handleIncomeRecording(
-                    userId,
-                    userMessage
-                );
-                break;
-            case 'CREAR_META_AHORRO':
-                response = await handleCreateSavingGoal(userId, userMessage);
-                break;
-            case 'AGREGAR_A_META':
-                response = await handleAddToSavingGoal(userId, userMessage);
-                break;
+            if (!response) response = fallbackMessage;
 
-
-
-            case 'CONSULTAR':
-                response = await handleQuery(
-                    userId,
-                    userMessage,
-                    formattedHistory
-                );
-                break;
-
-            default:
-                response =
-                    await openRouterService.generateGeneralResponse(
-                        userMessage,
-                        formattedHistory
-                    );
+        } catch (error) {
+            console.error('❌ Error en ruteo o IA:', error.message);
+            response = fallbackMessage;
         }
 
         /* ===============================
            Guardar respuesta del bot
         =============================== */
-        await ChatMensaje.query().insert({
-            user_id: userId,
-            mensaje: response,
-            es_bot: true
-        });
+        try {
+            console.log(`💾 Guardando respuesta del bot para ${userId}`);
+            await ChatMensaje.query().insert({
+                user_id: userId,
+                mensaje: response,
+                rol: 'assistant'
+            });
+        } catch (dbError) {
+            console.error('⚠️ No se pudo guardar respuesta del bot en BD:', dbError.message);
+        }
 
         return {
             success: true,
@@ -97,20 +106,10 @@ async function processMessage(userId, userMessage) {
         };
 
     } catch (error) {
-        console.error('❌ Error en ChatbotFinanceService:', error);
-
-        const fallback =
-            'Lo siento, tuve un problema al procesar tu mensaje 😕';
-
-        await ChatMensaje.query().insert({
-            user_id: userId,
-            mensaje: fallback,
-            es_bot: true
-        });
-
+        console.error('❌ Error Crítico en ChatbotFinanceService:', error);
         return {
             success: false,
-            response: fallback,
+            response: "Hola 👋 Estoy activo, pero tuve un problema interno. ¡Inténtalo de nuevo en un momento! 😊",
             error: error.message
         };
     }

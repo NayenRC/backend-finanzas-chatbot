@@ -16,26 +16,21 @@ class ChatMensaje extends Model {
   }
 
   static async findByIdAndUser(id, user_id) {
-    return db(this.tableName)
-      .where(this.primaryKey, id)
-      .andWhere('user_id', user_id)
-      .first();
+    return this.query()
+      .findById(id)
+      .where('user_id', user_id);
   }
 
   static async updateByUser(id, user_id, data) {
-    const [result] = await db(this.tableName)
-      .where(this.primaryKey, id)
-      .andWhere('user_id', user_id)
-      .update(data)
-      .returning('*');
-    return result;
+    return this.query()
+      .patchAndFetchById(id, data)
+      .where('user_id', user_id);
   }
 
   static async deleteByUser(id, user_id) {
-    return db(this.tableName)
-      .where(this.primaryKey, id)
-      .andWhere('user_id', user_id)
-      .del();
+    return this.query()
+      .deleteById(id)
+      .where('user_id', user_id);
   }
 }
 
