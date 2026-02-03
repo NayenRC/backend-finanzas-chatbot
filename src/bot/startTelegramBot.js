@@ -3,9 +3,9 @@ import chatBotFinanceService from '../services/chatBotFinanceService.js';
 import Usuario from '../models/Usuario.js';
 
 export function startTelegramBot() {
-  if (global.telegramBot) {
-    console.log('⚠️ Bot ya iniciado, reutilizando instancia');
-    return global.telegramBot;
+  if (!process.env.TELEGRAM_BOT_TOKEN) {
+    console.warn('⚠️ TELEGRAM_BOT_TOKEN no definido, bot deshabilitado');
+    return;
   }
 
   console.log('🤖 Iniciando SmartFin Telegram Bot...');
@@ -13,8 +13,6 @@ export function startTelegramBot() {
   const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
     polling: true,
   });
-
-  global.telegramBot = bot;
 
   const userSessions = new Map();
 
@@ -26,7 +24,10 @@ export function startTelegramBot() {
     if (!usuario) {
       usuario = await Usuario.query().insert({
         telegram_id: telegramId,
-        nombre: telegramUser.first_name || 'Usuario Telegram',
+        nombre:
+          telegramUser.first_name ||
+          telegramUser.username ||
+          'Usuario Telegram',
         activo: true,
       });
     }
@@ -35,9 +36,9 @@ export function startTelegramBot() {
   }
 
   bot.on('message', async (msg) => {
-    if (!msg.text) return;
-
     const chatId = msg.chat.id;
+    const text = msg.text;
+    if (!text) return;
 
     try {
       let userId = userSessions.get(chatId);
@@ -47,22 +48,27 @@ export function startTelegramBot() {
         userSessions.set(chatId, userId);
       }
 
-      const result = await chatBotFinanceService.processMessage(
-        userId,
-        msg.text
-      );
+      await bot.sendChatAction(chatId, 'typing');
 
-      await bot.sendMessage(chatId, result.response);
+      const result = await chatBotFinanceService.processMessage(userId, text);
 
+      const response =
+        result?.response ||
+        'Hola 👋 Estoy activo, pero ahora mismo no puedo responder con IA.';
+
+      await bot.sendMessage(chatId, response);
     } catch (error) {
       console.error('❌ TELEGRAM BOT ERROR:', error);
       await bot.sendMessage(
         chatId,
-        'Hola 👋 Tuve un problema técnico, intenta nuevamente 😊'
+        'Tuve un problema interno 😕 Intenta nuevamente.'
       );
     }
   });
 
+  bot.on('polling_error', (error) => {
+    console.error('❌ Polling error:', error.message);
+  });
+
   console.log('💬 Bot listo para recibir mensajes');
-  return bot;
 }
