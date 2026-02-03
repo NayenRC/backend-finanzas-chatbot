@@ -23,31 +23,12 @@ class Gasto extends Model {
     };
   }
 
-  static async findByUser(user_id) {
+  static findByUser(user_id) {
     return this.query()
       .where('user_id', user_id)
       .orderBy('fecha', 'desc');
   }
-  static async findByIdAndUser(id, user_id) {
-    return this.query()
-      .where('id_gasto', id)
-      .andWhere('user_id', user_id)
-      .first();
-  }
-
-
-  static async updateByUser(id, user_id, data) {
-    return this.query()
-      .patchAndFetchById(id, data)
-      .where('user_id', user_id);
-  }
-
-  static async deleteByUser(id, user_id) {
-    return this.query()
-      .delete()
-      .where(this.idColumn, id)
-      .andWhere('user_id', user_id);
-  }
 }
 
 export default Gasto;
+

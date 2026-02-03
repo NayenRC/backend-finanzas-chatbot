@@ -12,7 +12,7 @@ class MetaAhorro extends Model {
   static findByUser(user_id) {
     return this.query()
       .where('user_id', user_id)
-      .orderBy('creado_en', 'desc');
+      .orderBy('created_at', 'desc');
   }
 }
 

@@ -32,3 +32,5 @@ class Ingreso extends Model {
 
 export default Ingreso;
 
+
+
