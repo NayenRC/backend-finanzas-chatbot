@@ -18,6 +18,13 @@ app.use(morgan('dev'));
 app.use('/api', router);
 
 const PORT = process.env.PORT || 3000;
+app.get('/', (req, res) => {
+  res.json({
+    status: 'ok',
+    message: '🚀 SmartFin Backend API running',
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Backend running`);
 
