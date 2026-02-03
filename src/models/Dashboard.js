@@ -59,24 +59,25 @@ class Dashboard {
 
         let query = db('gastos')
             .leftJoin('categorias', 'gastos.categoria_id', 'categorias.id_categoria')
-            .where('gasto.user_id', userId)
+            .where('gastos.user_id', userId)
             .select(
                 'categorias.nombre as categoria',
                 db.raw('COUNT(*) as cantidad'),
-                db.raw('SUM(gasto.monto) as total')
+                db.raw('SUM(gastos.monto) as total')
             )
             .groupBy('categorias.id_categoria', 'categorias.nombre');
 
         if (startDate) {
-            query = query.where('gasto.fecha', '>=', startDate);
+            query = query.where('gastos.fecha', '>=', startDate);
         }
 
         if (endDate) {
-            query = query.where('gasto.fecha', '<=', endDate);
+            query = query.where('gastos.fecha', '<=', endDate);
         }
 
         return await query;
     }
+
 }
 
 export default Dashboard;
