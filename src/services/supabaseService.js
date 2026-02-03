@@ -1,107 +1,25 @@
+import { createClient } from '@supabase/supabase-js';
 import ChatMensaje from '../models/ChatMensaje.js';
 import Gasto from '../models/Gasto.js';
 import Ingreso from '../models/Ingreso.js';
 import Categoria from '../models/Categoria.js';
 import Usuario from '../models/Usuario.js';
+// Importamos MetaAhorro y MovimientoAhorro por si se usan en el futuro o para consultas completas
+// import MetaAhorro from '../models/MetaAhorro.js';
+// import MovimientoAhorro from '../models/MovimientoAhorro.js';
 import { createClient } from '@supabase/supabase-js';
-/* ==================================================
-   DATA ACCESS LAYER
-   Usa SOLO Objection.js / Knex
-================================================== */
 
-async function getChatHistory(userId, limit = 6) {
-  try {
-    const history = await ChatMensaje.query()
-      .where('user_id', userId)
-      .orderBy('creado_en', 'desc')
-      .limit(limit);
-
-    return history.reverse();
-  } catch (error) {
-    console.error('Error fetching chat history:', error);
-    return [];
-  }
-}
-
-async function saveChatMessage(userId, rol, mensaje) {
-  try {
-    await ChatMensaje.query().insert({
-      user_id: userId,
-      rol,
-      mensaje,
-      creado_en: new Date()
-    });
-  } catch (error) {
-    console.error('Error saving chat message:', error);
-  }
-}
-
-async function getCategories(tipo) {
-  return Categoria.query().where('tipo', tipo);
-}
-
-async function findCategoryByName(name, tipo) {
-  if (!name) return null;
-
-  return Categoria.query()
-    .where('tipo', tipo)
-    .andWhereRaw('LOWER(nombre) LIKE ?', [`%${name.toLowerCase()}%`])
-    .first();
-}
-
-async function createExpense(userId, data) {
-  return Gasto.query().insert({
-    user_id: userId,
-    monto: data.monto,
-    descripcion: data.descripcion,
-    categoria_id: data.categoria_id,
-    fecha: data.fecha || new Date()
-  });
-}
-
-async function createIncome(userId, data) {
-  return Ingreso.query().insert({
-    user_id: userId,
-    monto: data.monto,
-    descripcion: data.descripcion,
-    categoria_id: data.categoria_id,
-    fecha: data.fecha || new Date()
-  });
-}
-
-async function getExpenses(userId, range = {}) {
-  let query = Gasto.query()
-    .where('user_id', userId)
-    .withGraphFetched('categoria')
-    .orderBy('fecha', 'desc');
-
-  if (range.startDate && range.endDate) {
-    query.whereBetween('fecha', [range.startDate, range.endDate]);
-  }
-
-  return query;
-}
-
-async function getIncomes(userId, range = {}) {
-  let query = Ingreso.query()
-    .where('user_id', userId)
-    .withGraphFetched('categoria')
-    .orderBy('fecha', 'desc');
-
-  if (range.startDate && range.endDate) {
-    query.whereBetween('fecha', [range.startDate, range.endDate]);
-  }
-
-  return query;
-}
-// Usa los nombres exactos que tienes en Railway
+// 1. Extraemos las variables de entorno
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; 
 
+// 2. Verificación de seguridad en logs de Railway
+if (!supabaseUrl || !supabaseKey) {
+  console.error("❌ ERROR CRÍTICO: Faltan variables de entorno de Supabase en el servidor.");
+}
+
+// 3. Creamos el cliente
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default supabase; // 👈 Esto permite el import directo que pusimos arriba
-
-
-console.log("SUPABASE_URL:", !!process.env.SUPABASE_URL);
-console.log("SUPABASE_SERVICE_ROLE_KEY:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+// 4. Exportación única por defecto
+export default supabase;
