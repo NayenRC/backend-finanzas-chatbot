@@ -6,508 +6,301 @@ import Gasto from '../models/Gasto.js';
 import MetaAhorroService from '../services/metaAhorroService.js';
 import MetaAhorro from '../models/MetaAhorro.js';
 
+const SHORT_MESSAGE_REPLY =
+  'Hola 👋 ¿En qué te puedo ayudar? Puedes registrar gastos, ingresos o metas 😊';
+
+const IA_FALLBACK_REPLY =
+  'Hola 👋 Estoy activo, pero ahora mismo no puedo responder con IA. ' +
+  'Puedes registrar gastos, ingresos o metas y seguiré funcionando 😊';
+
+/* =====================================================
+   FUNCIÓN PRINCIPAL DEL BOT
+===================================================== */
 async function processMessage(userId, userMessage) {
-    try {
-        /* ===============================
-            Obtener historial de chat
-        =============================== */
-        const chatHistory = await ChatMensaje.findByUser(userId);
+  try {
+    /* ===============================
+       Guardar mensaje del usuario
+    =============================== */
+    await ChatMensaje.query().insert({
+      user_id: userId,
+      mensaje: userMessage,
+      rol: 'user',
+    });
 
-        const formattedHistory = chatHistory
-            .slice(-6)
-            .map(msg => ({
-                role: msg.rol,
-                content: msg.mensaje
-            }));
+    /* ===============================
+       FILTRO MENSAJES CORTOS
+    =============================== */
+    if (!userMessage || userMessage.trim().length < 3) {
+      await ChatMensaje.query().insert({
+        user_id: userId,
+        mensaje: SHORT_MESSAGE_REPLY,
+        rol: 'assistant',
+      });
 
-        /* ===============================
-           Guardar mensaje del usuario
-        =============================== */
-        try {
-            console.log(`💾 Guardando mensaje de usuario ${userId}`);
-            await ChatMensaje.query().insert({
-                user_id: userId,
-                mensaje: userMessage,
-                rol: 'user'
-            });
-        } catch (dbError) {
-            console.error('⚠️ No se pudo guardar mensaje del usuario en BD:', dbError.message);
-        }
-
-        /* ===============================
-          Detectar intención con IA
-        =============================== */
-        let intencion = 'OTRO';
-        let confianza = 0.5;
-
-        try {
-            const intentResult = await openRouterService.analyzeIntent(userMessage);
-            intencion = intentResult.intencion;
-            confianza = intentResult.confianza;
-        } catch (error) {
-            console.warn('⚠️ No se pudo analizar intención, usando fallback "OTRO"');
-        }
-
-        console.log(`🤖 Intención: ${intencion} (${confianza})`);
-
-        let response;
-        const fallbackMessage = "Hola 👋 Estoy activo, pero ahora mismo no puedo responder con IA. " +
-            "Puedes registrar gastos, ingresos o metas y seguiré funcionando 😊";
-
-        /* ===============================
-           Ruteo por intención
-        =============================== */
-        try {
-            switch (intencion) {
-                case 'REGISTRAR_GASTO':
-                    response = await handleExpenseRecording(userId, userMessage);
-                    break;
-                case 'REGISTRAR_INGRESO':
-                    response = await handleIncomeRecording(userId, userMessage);
-                    break;
-                case 'CREAR_META_AHORRO':
-                    response = await handleCreateSavingGoal(userId, userMessage);
-                    break;
-                case 'AGREGAR_A_META':
-                    response = await handleAddToSavingGoal(userId, userMessage);
-                    break;
-                case 'CONSULTAR':
-                    response = await handleQuery(userId, userMessage, formattedHistory);
-                    break;
-                default:
-                    response = await openRouterService.generateGeneralResponse(userMessage, formattedHistory);
-            }
-
-            if (!response) response = fallbackMessage;
-
-        } catch (error) {
-            console.error('❌ Error en ruteo o IA:', error.message);
-            response = fallbackMessage;
-        }
-
-        /* ===============================
-           Guardar respuesta del bot
-        =============================== */
-        try {
-            console.log(`💾 Guardando respuesta del bot para ${userId}`);
-            await ChatMensaje.query().insert({
-                user_id: userId,
-                mensaje: response,
-                rol: 'assistant'
-            });
-        } catch (dbError) {
-            console.error('⚠️ No se pudo guardar respuesta del bot en BD:', dbError.message);
-        }
-
-        return {
-            success: true,
-            response,
-            intent: intencion
-        };
-
-    } catch (error) {
-        console.error('❌ Error Crítico en ChatbotFinanceService:', error);
-        return {
-            success: false,
-            response: "Hola 👋 Estoy activo, pero tuve un problema interno. ¡Inténtalo de nuevo en un momento! 😊",
-            error: error.message
-        };
+      return {
+        success: true,
+        response: SHORT_MESSAGE_REPLY,
+        intent: 'SALUDO',
+      };
     }
+
+    /* ===============================
+       HISTORIAL DE CHAT
+    =============================== */
+    const chatHistory = await ChatMensaje.findByUser(userId);
+
+    const formattedHistory = chatHistory
+      .slice(-6)
+      .map((msg) => ({
+        role: msg.rol,
+        content: msg.mensaje,
+      }));
+
+    /* ===============================
+       DETECTAR INTENCIÓN (IA)
+    =============================== */
+    let intencion = 'OTRO';
+
+    try {
+      const intentResult = await openRouterService.analyzeIntent(userMessage);
+      intencion = intentResult.intencion || 'OTRO';
+    } catch (err) {
+      console.warn('⚠️ No se pudo analizar intención, usando OTRO');
+    }
+
+    let response;
+
+    /* ===============================
+       RUTEO POR INTENCIÓN
+    =============================== */
+    try {
+      switch (intencion) {
+        case 'REGISTRAR_GASTO':
+          response = await handleExpenseRecording(userId, userMessage);
+          break;
+
+        case 'REGISTRAR_INGRESO':
+          response = await handleIncomeRecording(userId, userMessage);
+          break;
+
+        case 'CREAR_META_AHORRO':
+          response = await handleCreateSavingGoal(userId, userMessage);
+          break;
+
+        case 'AGREGAR_A_META':
+          response = await handleAddToSavingGoal(userId, userMessage);
+          break;
+
+        case 'CONSULTAR':
+          response = await handleQuery(
+            userId,
+            userMessage,
+            formattedHistory
+          );
+          break;
+
+        default:
+          response = await openRouterService.generateGeneralResponse(
+            userMessage,
+            formattedHistory
+          );
+      }
+    } catch (err) {
+      console.error('⚠️ IA falló:', err.message);
+      response = IA_FALLBACK_REPLY;
+    }
+
+    if (!response) response = IA_FALLBACK_REPLY;
+
+    /* ===============================
+       GUARDAR RESPUESTA DEL BOT
+    =============================== */
+    await ChatMensaje.query().insert({
+      user_id: userId,
+      mensaje: response,
+      rol: 'assistant',
+    });
+
+    return {
+      success: true,
+      response,
+      intent: intencion,
+    };
+  } catch (error) {
+    console.error('❌ Error crítico en chatbot:', error);
+
+    return {
+      success: false,
+      response:
+        'Estoy activo 😊 Hubo un problema momentáneo, intenta de nuevo.',
+    };
+  }
 }
 
+/* =====================================================
+   FUNCIONES DE NEGOCIO
+===================================================== */
 
 async function handleExpenseRecording(userId, userMessage) {
-    try {
-        console.log(`📝 Registrando gasto usuario ${userId}: "${userMessage}"`);
+  try {
+    const categorias = await Categoria.findByUser(userId);
 
-        /* ===============================
-            Obtener categorías del usuario
-        =============================== */
-        const categorias = await Categoria.findByUser(userId);
+    const expenseData = await openRouterService.classifyExpense(
+      userMessage,
+      categorias
+    );
 
-        /* ===============================
-          IA extrae datos del gasto
-        =============================== */
-        const expenseData =
-            await openRouterService.classifyExpense(
-                userMessage,
-                categorias
-            );
-
-        /* ===============================
-            Manejo de errores IA
-        =============================== */
-        if (expenseData?.error) {
-            return expenseData.sugerencia ||
-                'Para registrar un gasto necesito el monto y una descripción 💸';
-        }
-
-        if (
-            expenseData.info_faltante &&
-            expenseData.info_faltante.includes('monto')
-        ) {
-            return `Entiendo el gasto en **${expenseData.descripcion || 'algo'}**, pero me falta el monto 💰 ¿Cuánto fue?`;
-        }
-
-        if (!expenseData.monto || isNaN(expenseData.monto)) {
-            return 'No pude entender el monto del gasto 🤔 ¿Me lo puedes decir de nuevo?';
-        }
-
-        /* ===============================
-           Resolver categoría
-        =============================== */
-        let categoria = null;
-
-        if (expenseData.categoria) {
-            categoria = categorias.find(c =>
-                c.nombre.toLowerCase()
-                    .includes(expenseData.categoria.toLowerCase())
-            );
-        }
-
-        if (!categoria && categorias.length > 0) {
-            categoria =
-                categorias.find(c =>
-                    c.nombre.toLowerCase().includes('otro')
-                ) || categorias[0];
-        }
-
-        /* ===============================
-          Guardar gasto
-        =============================== */
-        await Gasto.query().insert({
-            user_id: userId,
-            monto: expenseData.monto,
-            descripcion: expenseData.descripcion || 'Gasto registrado por chatbot',
-            categoria_id: categoria?.id_categoria || null,
-            fecha: new Date().toISOString().split('T')[0]
-        });
-
-        /* ===============================
-          Respuesta al usuario
-        =============================== */
-        return `¡Listo! ✨ Registré tu gasto:
-
-💸 **Monto**: $${expenseData.monto.toLocaleString('es-CL')}
-📝 **Descripción**: ${expenseData.descripcion || 'Sin descripción'}
-🏷️ **Categoría**: ${categoria?.nombre || 'General'}
-
-¿Quieres agregar otro gasto o revisar un resumen? 😊`;
-
-    } catch (error) {
-        console.error('❌ Error en handleExpenseRecording:', error);
-        return 'Tuve un problema técnico al guardar el gasto 😕 ¿Lo intentamos de nuevo?';
+    if (expenseData?.error) {
+      return (
+        expenseData.sugerencia ||
+        'Para registrar un gasto necesito el monto y una descripción 💸'
+      );
     }
+
+    if (!expenseData.monto || isNaN(expenseData.monto)) {
+      return 'No pude entender el monto del gasto 🤔';
+    }
+
+    let categoria =
+      categorias.find((c) =>
+        c.nombre
+          .toLowerCase()
+          .includes(expenseData.categoria?.toLowerCase() || '')
+      ) || categorias[0];
+
+    await Gasto.query().insert({
+      user_id: userId,
+      monto: expenseData.monto,
+      descripcion: expenseData.descripcion || 'Gasto registrado por chatbot',
+      categoria_id: categoria?.id_categoria || null,
+      fecha: new Date().toISOString().split('T')[0],
+    });
+
+    return `¡Listo! ✨ Registré tu gasto:
+
+💸 Monto: $${expenseData.monto.toLocaleString('es-CL')}
+📝 ${expenseData.descripcion || 'Sin descripción'}
+🏷️ ${categoria?.nombre || 'General'}`;
+  } catch (err) {
+    console.error('❌ Error gasto:', err);
+    return 'Tuve un problema al guardar el gasto 😕';
+  }
 }
 
 async function handleIncomeRecording(userId, userMessage) {
-    try {
-        console.log(`📝 Registrando ingreso usuario ${userId}: "${userMessage}"`);
+  try {
+    const categorias = await Categoria.findByUser(userId);
 
-        /* ===============================
-            Obtener categorías del usuario
-        =============================== */
-        const categorias = await Categoria.findByUser(userId);
+    const incomeData = await openRouterService.classifyIncome(
+      userMessage,
+      categorias
+    );
 
-        /* ===============================
-           IA extrae datos del ingreso
-        =============================== */
-        const incomeData =
-            await openRouterService.classifyIncome(
-                userMessage,
-                categorias
-            );
-
-        /* ===============================
-            Manejo de errores IA
-        =============================== */
-        if (incomeData?.error) {
-            return incomeData.sugerencia ||
-                'Para registrar un ingreso necesito el monto y una descripción 💰';
-        }
-
-        if (
-            incomeData.info_faltante &&
-            incomeData.info_faltante.includes('monto')
-        ) {
-            return `Qué buena noticia 🎉 Entiendo el ingreso por **${incomeData.descripcion || 'algo'}**, pero me falta el monto 💰 ¿Cuánto fue?`;
-        }
-
-        if (!incomeData.monto || isNaN(incomeData.monto)) {
-            return 'No pude entender el monto del ingreso 🤔 ¿Me lo puedes decir de nuevo?';
-        }
-
-        /* ===============================
-           Resolver categoría
-        =============================== */
-        let categoria = null;
-
-        if (incomeData.categoria) {
-            categoria = categorias.find(c =>
-                c.nombre.toLowerCase()
-                    .includes(incomeData.categoria.toLowerCase())
-            );
-        }
-
-        if (!categoria && categorias.length > 0) {
-            categoria =
-                categorias.find(c =>
-                    c.nombre.toLowerCase().includes('otro')
-                ) || categorias[0];
-        }
-
-        /* ===============================
-           Guardar ingreso
-        =============================== */
-        await Ingreso.query().insert({
-            user_id: userId,
-            monto: incomeData.monto,
-            descripcion: incomeData.descripcion || 'Ingreso registrado por chatbot',
-            categoria_id: categoria?.id_categoria || null,
-            fecha: new Date().toISOString().split('T')[0]
-        });
-
-        /* ===============================
-           Respuesta al usuario
-        =============================== */
-        return `¡Excelente! 🌟 Registré tu ingreso:
-
-💰 **Monto**: $${incomeData.monto.toLocaleString('es-CL')}
-📝 **Descripción**: ${incomeData.descripcion || 'Sin descripción'}
-🏷️ **Categoría**: ${categoria?.nombre || 'General'}
-
-¿Quieres registrar otro ingreso o revisar cómo va tu balance? 😊`;
-
-    } catch (error) {
-        console.error('❌ Error en handleIncomeRecording:', error);
-        return 'Tuve un problema técnico al guardar el ingreso 😕 ¿Lo intentamos de nuevo?';
+    if (!incomeData.monto || isNaN(incomeData.monto)) {
+      return 'No pude entender el monto del ingreso 🤔';
     }
+
+    let categoria =
+      categorias.find((c) =>
+        c.nombre
+          .toLowerCase()
+          .includes(incomeData.categoria?.toLowerCase() || '')
+      ) || categorias[0];
+
+    await Ingreso.query().insert({
+      user_id: userId,
+      monto: incomeData.monto,
+      descripcion: incomeData.descripcion || 'Ingreso registrado por chatbot',
+      categoria_id: categoria?.id_categoria || null,
+      fecha: new Date().toISOString().split('T')[0],
+    });
+
+    return `¡Excelente! 🌟 Registré tu ingreso:
+
+💰 $${incomeData.monto.toLocaleString('es-CL')}
+📝 ${incomeData.descripcion || 'Sin descripción'}`;
+  } catch (err) {
+    console.error('❌ Error ingreso:', err);
+    return 'Tuve un problema al guardar el ingreso 😕';
+  }
 }
 
-async function handleQuery(userId, userMessage, chatHistory) {
-    try {
-        const timeRange = extractTimeRange(userMessage);
+async function handleQuery(userId, userMessage, history) {
+  try {
+    const gastos = await Gasto.findByUser(userId);
+    const ingresos = await Ingreso.findByUser(userId);
 
-        let gastos = await Gasto.findByUser(userId);
-        let ingresos = await Ingreso.findByUser(userId);
-
-        if (timeRange.startDate && timeRange.endDate) {
-            gastos = gastos.filter(g =>
-                g.fecha >= timeRange.startDate &&
-                g.fecha <= timeRange.endDate
-            );
-
-            ingresos = ingresos.filter(i =>
-                i.fecha >= timeRange.startDate &&
-                i.fecha <= timeRange.endDate
-            );
-        }
-
-        const totalGastos = gastos.reduce(
-            (sum, g) => sum + Number(g.monto || 0), 0
-        );
-
-        const totalIngresos = ingresos.reduce(
-            (sum, i) => sum + Number(i.monto || 0), 0
-        );
-
-        const balance = totalIngresos - totalGastos;
-
-        const categorias = await Categoria.findByUser(userId);
-
-        const gastosPorCategoria = categorias.map(cat => {
-            const total = gastos
-                .filter(g => g.categoria_id === cat.id_categoria)
-                .reduce((sum, g) => sum + Number(g.monto || 0), 0);
-
-            return {
-                categoria: cat.nombre,
-                total
-            };
-        }).filter(c => c.total > 0);
-
-        const financialData = {
-            periodo: timeRange.label || 'todos los registros',
-            resumen: {
-                total_gastos: totalGastos,
-                total_ingresos: totalIngresos,
-                balance,
-                estado: balance >= 0 ? 'A favor 🟢' : 'En contra 🔴'
-            },
-            ultimos_gastos: gastos.slice(0, 5),
-            ultimos_ingresos: ingresos.slice(0, 5),
-            gastos_por_categoria: gastosPorCategoria
-        };
-
-        const response =
-            await openRouterService.generateQueryResponse(
-                userMessage,
-                financialData,
-                chatHistory
-            );
-
-        return response;
-
-    } catch (error) {
-        console.error('❌ Error en handleQuery:', error);
-        return 'Tuve un problema al consultar tus datos financieros 😕';
-    }
+    return await openRouterService.generateQueryResponse(
+      userMessage,
+      { gastos, ingresos },
+      history
+    );
+  } catch (err) {
+    console.error('❌ Error consulta:', err);
+    return IA_FALLBACK_REPLY;
+  }
 }
 
 async function handleCreateSavingGoal(userId, userMessage) {
-    try {
-        const goalData =
-            await openRouterService.classifySavingGoal(userMessage);
+  try {
+    const goalData =
+      await openRouterService.classifySavingGoal(userMessage);
 
-        if (goalData.error) {
-            return goalData.sugerencia ||
-                'Para crear una meta necesito el monto y el objetivo 😊';
-        }
-
-        if (
-            goalData.info_faltante &&
-            goalData.info_faltante.length > 0
-        ) {
-            if (goalData.info_faltante.includes('monto_objetivo')) {
-                return `Entiendo la meta **${goalData.nombre || ''}**, pero me falta el monto 💰 ¿Cuánto quieres ahorrar?`;
-            }
-        }
-
-        const meta = await MetaAhorroService.crearMeta(userId, {
-            nombre: goalData.nombre,
-            monto_objetivo: goalData.monto_objetivo
-        });
-
-        return `🎯 **Meta de ahorro creada con éxito**
-
-📌 **Objetivo**: ${meta.nombre}
-💰 **Monto objetivo**: $${meta.monto_objetivo.toLocaleString('es-CL')}
-
-¡Vamos paso a paso! 💪 ¿Quieres agregar un primer ahorro a esta meta?`;
-
-    } catch (error) {
-        console.error('❌ Error creando meta:', error);
-        return 'Tuve un problema al crear la meta 😕 ¿Lo intentamos de nuevo?';
+    if (!goalData.monto_objetivo) {
+      return '¿Cuánto quieres ahorrar en esta meta? 💰';
     }
+
+    const meta = await MetaAhorroService.crearMeta(userId, {
+      nombre: goalData.nombre,
+      monto_objetivo: goalData.monto_objetivo,
+    });
+
+    return `🎯 Meta creada: ${meta.nombre}
+💰 Objetivo: $${meta.monto_objetivo.toLocaleString('es-CL')}`;
+  } catch (err) {
+    console.error('❌ Error meta:', err);
+    return 'No pude crear la meta 😕';
+  }
 }
 
 async function handleAddToSavingGoal(userId, userMessage) {
-    try {
-        // 1️⃣ Obtener metas del usuario
-        const metas = await MetaAhorro.findByUser(userId);
+  try {
+    const metas = await MetaAhorro.findByUser(userId);
 
-        if (!metas.length) {
-            return 'Aún no tienes metas de ahorro creadas 😕 ¿Quieres crear una?';
-        }
-
-        // 2️⃣ IA extrae datos
-        const data =
-            await openRouterService.classifySavingMovement(userMessage, metas);
-
-        if (data.error) {
-            return data.sugerencia ||
-                'Para agregar un ahorro dime el monto y la meta 💰';
-        }
-
-        if (!data.monto || isNaN(data.monto)) {
-            return '¿Cuánto deseas agregar a la meta? 💰';
-        }
-
-        // 3️⃣ Resolver meta
-        let meta = null;
-
-        if (data.meta) {
-            meta = metas.find(m =>
-                m.nombre.toLowerCase().includes(data.meta.toLowerCase())
-            );
-        }
-
-        if (!meta) {
-            return `No pude identificar la meta 😕 Tus metas son: ${metas.map(m => m.nombre).join(', ')}`;
-        }
-
-        // 4️⃣ Registrar movimiento (service de negocio)
-        const result = await MetaAhorroService.agregarMovimiento(
-            meta.id_meta,
-            userId,
-            data.monto,
-            new Date().toISOString().split('T')[0]
-        );
-
-        const progreso = Math.min(
-            (result.progreso.actual / result.progreso.objetivo) * 100,
-            100
-        ).toFixed(1);
-
-        return `💰 **Ahorro agregado con éxito**
-
-🎯 **Meta**: ${meta.nombre}
-➕ **Aporte**: $${data.monto.toLocaleString('es-CL')}
-📊 **Progreso**: ${progreso}% ($${result.progreso.actual.toLocaleString('es-CL')} / $${result.progreso.objetivo.toLocaleString('es-CL')})
-
-¡Excelente constancia! 💪✨`;
-
-    } catch (error) {
-        console.error('❌ Error agregando ahorro:', error);
-        return 'Tuve un problema al registrar el ahorro 😕 ¿Lo intentamos de nuevo?';
-    }
-}
-
-
-/**
- * Extract time range from user message
- */
-function extractTimeRange(message) {
-    const today = new Date();
-    const messageLower = message.toLowerCase();
-
-    // Today
-    if (messageLower.includes('hoy')) {
-        return {
-            startDate: today.toISOString().split('T')[0],
-            endDate: today.toISOString().split('T')[0],
-            label: 'hoy'
-        };
+    if (!metas.length) {
+      return 'Aún no tienes metas de ahorro 😕';
     }
 
-    // This week
-    if (messageLower.includes('semana')) {
-        const startOfWeek = new Date(today);
-        startOfWeek.setDate(today.getDate() - today.getDay());
-        return {
-            startDate: startOfWeek.toISOString().split('T')[0],
-            endDate: today.toISOString().split('T')[0],
-            label: 'esta semana'
-        };
+    const data =
+      await openRouterService.classifySavingMovement(userMessage, metas);
+
+    if (!data.monto) {
+      return '¿Cuánto deseas agregar a la meta? 💰';
     }
 
-    // This month
-    if (messageLower.includes('mes')) {
-        const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        return {
-            startDate: startOfMonth.toISOString().split('T')[0],
-            endDate: today.toISOString().split('T')[0],
-            label: 'este mes'
-        };
+    const meta = metas.find((m) =>
+      m.nombre.toLowerCase().includes(data.meta?.toLowerCase() || '')
+    );
+
+    if (!meta) {
+      return 'No pude identificar la meta 😕';
     }
 
-    // Last 7 days
-    if (messageLower.includes('últimos') || messageLower.includes('ultimos')) {
-        const sevenDaysAgo = new Date(today);
-        sevenDaysAgo.setDate(today.getDate() - 7);
-        return {
-            startDate: sevenDaysAgo.toISOString().split('T')[0],
-            endDate: today.toISOString().split('T')[0],
-            label: 'últimos 7 días'
-        };
-    }
+    const result = await MetaAhorroService.agregarMovimiento(
+      meta.id_meta,
+      userId,
+      data.monto,
+      new Date().toISOString().split('T')[0]
+    );
 
-    // Default: all time
-    return {
-        label: 'todos los registros'
-    };
+    return `💰 Ahorro agregado a ${meta.nombre}
+Progreso: $${result.progreso.actual.toLocaleString('es-CL')}`;
+  } catch (err) {
+    console.error('❌ Error ahorro:', err);
+    return 'No pude registrar el ahorro 😕';
+  }
 }
 
 export default {
-    processMessage
+  processMessage,
 };

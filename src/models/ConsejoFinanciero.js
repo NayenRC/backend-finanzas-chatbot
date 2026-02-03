@@ -8,37 +8,33 @@ class ConsejoFinanciero extends Model {
     return 'consejo_financiero';
   }
 
-  static get primaryKey() {
+  static get idColumn() {
     return 'id_consejo';
   }
 
   static async findByUser(user_id) {
-    return db(this.tableName)
+    return this.query()
       .where('user_id', user_id)
       .orderBy('generado_en', 'desc');
   }
 
   static async findByIdAndUser(id, user_id) {
-    return db(this.tableName)
-      .where(this.primaryKey, id)
-      .andWhere('user_id', user_id)
+    return this.query()
+      .findById(id)
+      .where('user_id', user_id)
       .first();
   }
 
   static async updateByUser(id, user_id, data) {
-    const [result] = await db(this.tableName)
-      .where(this.primaryKey, id)
-      .andWhere('user_id', user_id)
-      .update(data)
-      .returning('*');
-    return result;
+    return this.query()
+      .patchAndFetchById(id, data)
+      .where('user_id', user_id);
   }
 
   static async deleteByUser(id, user_id) {
-    return db(this.tableName)
-      .where(this.primaryKey, id)
-      .andWhere('user_id', user_id)
-      .del();
+    return this.query()
+      .deleteById(id)
+      .where('user_id', user_id);
   }
 }
 
