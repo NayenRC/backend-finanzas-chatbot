@@ -4,7 +4,6 @@
  * Controlador para manejar la lógica de negocio de las rutas de Telegram.
  */
 
-import TelegramBot from 'node-telegram-bot-api';
 import Usuario from '../models/Usuario.js';
 import jwt from 'jsonwebtoken';
 import chatBotFinanceService from '../services/chatBotFinanceService.js';
