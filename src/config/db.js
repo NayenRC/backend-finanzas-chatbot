@@ -17,6 +17,8 @@ Model.knex(db)
 
 
 console.log('🗄️ Base de datos conectada (Knex + Objection)')
+console.log('🧪 NODE_ENV:', process.env.NODE_ENV);
+console.log('🧪 DATABASE_URL exists:', !!process.env.DATABASE_URL);
 
 
 // Exportamos la instancia para usarla en los modelos
