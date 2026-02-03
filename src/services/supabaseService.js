@@ -7,7 +7,6 @@ import Usuario from '../models/Usuario.js';
 // Importamos MetaAhorro y MovimientoAhorro por si se usan en el futuro o para consultas completas
 // import MetaAhorro from '../models/MetaAhorro.js';
 // import MovimientoAhorro from '../models/MovimientoAhorro.js';
-import { createClient } from '@supabase/supabase-js';
 
 // 1. Extraemos las variables de entorno
 const supabaseUrl = process.env.SUPABASE_URL;
