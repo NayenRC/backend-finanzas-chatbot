@@ -1,9 +1,9 @@
 import supabaseService from '../services/supabaseService.js';
+import Usuario from '../models/Usuario.js';
 
 const { supabase } = supabaseService;
 
 export async function authenticateToken(req, res, next) {
-  // 🔑 RESPONDER PREFLIGHT
   if (req.method === 'OPTIONS') {
     return res.sendStatus(204);
   }
@@ -16,18 +16,28 @@ export async function authenticateToken(req, res, next) {
   }
 
   try {
+    // 1️⃣ Validar token con Supabase
     const { data, error } = await supabase.auth.getUser(token);
 
     if (error || !data?.user) {
       return res.status(403).json({ message: 'Token inválido o expirado' });
     }
 
+    // 2️⃣ Buscar usuario REAL en tu BD
+    const usuario = await Usuario.query()
+      .findOne({ email: data.user.email });
+
+    if (!usuario) {
+      return res.status(403).json({ message: 'Usuario no registrado en la base de datos' });
+    }
+
+    // 3️⃣ ESTE es el user_id correcto
     req.user = {
-      id: data.user.id,
-      email: data.user.email,
+      id: usuario.user_id,   // ✅ TU BD
+      email: usuario.email,
     };
 
-    return next();
+    next();
 
   } catch (error) {
     console.error('❌ Auth middleware error:', error);
@@ -36,4 +46,3 @@ export async function authenticateToken(req, res, next) {
 }
 
 export default authenticateToken;
-
