@@ -11,21 +11,19 @@ Model.knex(db);
 
 const app = express();
 
-/* =====================
-   CORS SIMPLE (FUNCIONA)
-===================== */
-app.use(cors({
-  origin: true, // 🔑 refleja automáticamente el origin (Vercel)
-  credentials: false, // 🔑 NO usas cookies
-}));
-
+app.use(cors({ origin: true }));
 app.use(express.json());
 app.use(morgan('dev'));
 
 app.use('/api', router);
 
 const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Backend running`);
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Backend running on port ${PORT}`);
+  if (process.env.ENABLE_TELEGRAM === 'true') {
+  import('./bot/startTelegramBot.js')
+    .then(m => m.startTelegramBot());
+}
+
 });

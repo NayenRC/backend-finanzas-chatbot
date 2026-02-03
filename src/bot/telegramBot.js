@@ -1,30 +1,77 @@
-import 'dotenv/config';
-import express from 'express';
-import cors from 'cors';
-import morgan from 'morgan';
-import { Model } from 'objection';
+import TelegramBot from 'node-telegram-bot-api';
+import chatBotFinanceService from '../services/chatBotFinanceService.js';
+import Usuario from '../models/Usuario.js';
 
-import db from './config/db.js';
-import router from './routes/index.js';
+export function startTelegramBot() {
+  if (!process.env.TELEGRAM_BOT_TOKEN) {
+    console.warn('⚠️ TELEGRAM_BOT_TOKEN no definido, bot deshabilitado');
+    return;
+  }
 
-Model.knex(db);
+  console.log('🤖 Iniciando SmartFin Telegram Bot...');
 
-const app = express();
+  const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
+    polling: true,
+  });
 
-app.use(cors({ origin: true }));
-app.use(express.json());
-app.use(morgan('dev'));
+  const userSessions = new Map();
 
-app.use('/api', router);
+  async function ensureUser(telegramUser) {
+    const telegramId = String(telegramUser.id);
 
-// ✅ ARRANQUE DEL SERVIDOR PRIMERO
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Backend running on port ${PORT}`);
-});
+    let usuario = await Usuario.query().findOne({ telegram_id: telegramId });
 
-// ✅ BOT DESPUÉS (NO BLOQUEA)
-if (process.env.ENABLE_TELEGRAM === 'true') {
-  import('./bot/startTelegramBot.js')
-    .then(m => m.startTelegramBot());
+    if (!usuario) {
+      usuario = await Usuario.query().insert({
+        telegram_id: telegramId,
+        nombre:
+          telegramUser.first_name ||
+          telegramUser.username ||
+          'Usuario Telegram',
+        activo: true,
+      });
+    }
+
+    return usuario.user_id;
+  }
+
+  bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+    const text = msg.text;
+    if (!text) return;
+
+    try {
+      let userId = userSessions.get(chatId);
+
+      if (!userId) {
+        userId = await ensureUser(msg.from);
+        userSessions.set(chatId, userId);
+      }
+
+      await bot.sendChatAction(chatId, 'typing');
+
+      const result = await chatBotFinanceService.processMessage(
+        userId,
+        text
+      );
+
+      const response =
+        result?.response ||
+        'Hola 👋 Estoy activo, pero ahora mismo no puedo responder con IA.';
+
+      await bot.sendMessage(chatId, response);
+    } catch (error) {
+      console.error('❌ TELEGRAM BOT ERROR:', error);
+      await bot.sendMessage(
+        chatId,
+        'Tuve un problema interno 😕 Intenta nuevamente en un momento.'
+      );
+    }
+  });
+
+  bot.on('polling_error', (error) => {
+    console.error('❌ Polling error:', error.message);
+  });
+
+  console.log('💬 Bot listo para recibir mensajes');
 }
