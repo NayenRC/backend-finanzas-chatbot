@@ -1,5 +1,4 @@
 import supabaseService from '../services/supabaseService.js';
-import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import Usuario from '../models/Usuario.js';
 // import emailService from '../services/emailService.js'; // si lo usas
@@ -87,58 +86,61 @@ class AuthController {
      REGISTER
   ========================= */
   static async register(req, res) {
-    try {
-      const { name, email, password } = req.body;
+  try {
+    const { name, email, password } = req.body;
 
-      if (!name || !email || !password) {
-        return res.status(400).json({ message: 'Todos los campos son requeridos' });
-      }
-
-      const normalizedEmail = email.toLowerCase().trim();
-
-      // 1. Registro en Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
-        email: normalizedEmail,
-        password,
-        options: {
-          data: {
-            display_name: name,
-          },
-        },
+    if (!name || !email || !password) {
+      return res.status(400).json({
+        message: 'Todos los campos son requeridos',
       });
-
-      if (error) {
-        console.error('❌ Supabase Register Error:', error.message);
-        return res.status(400).json({ message: error.message });
-      }
-
-      const supabaseUser = data.user;
-      if (!supabaseUser) {
-        return res.status(500).json({ message: 'Error al crear usuario en Auth' });
-      }
-
-      // 2. Guardar en DB local
-      try {
-        await Usuario.query().insert({
-          user_id: supabaseUser.id,
-          nombre: name,
-          email: normalizedEmail,
-          moneda: 'CLP',
-          activo: true,
-        });
-      } catch (dbError) {
-        console.warn('⚠️ Usuario creado en Auth pero no en DB local:', dbError.message);
-      }
-
-      return res.status(201).json({
-        message: 'Usuario registrado exitosamente. Revisa tu correo para confirmar la cuenta.',
-      });
-
-    } catch (error) {
-      console.error('🔥 REGISTER ERROR:', error);
-      return res.status(500).json({ message: 'Error interno al registrar usuario' });
     }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    /* =========================
+       1️⃣ Registro en Supabase Auth
+    ========================= */
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password,
+      options: {
+        data: {
+          display_name: name,
+        },
+      },
+    });
+
+    if (error || !data?.user) {
+      console.error('❌ Supabase Register Error:', error?.message);
+      return res.status(400).json({
+        message: error?.message || 'Error al registrar usuario',
+      });
+    }
+
+    /* =========================
+       2️⃣ Crear usuario en TU BD
+       🔑 SIN usar supabaseUser.id
+    ========================= */
+    await Usuario.query().insert({
+      email: normalizedEmail,
+      nombre: name,
+      moneda: 'CLP',
+      activo: true,
+    });
+
+    return res.status(201).json({
+      message:
+        'Usuario registrado exitosamente. Revisa tu correo para confirmar la cuenta.',
+    });
+
+  } catch (error) {
+    console.error('🔥 REGISTER ERROR:', error);
+    return res.status(500).json({
+      message: 'Error interno al registrar usuario',
+    });
   }
+}
+
 
   /* =========================
      PROFILE (PROTEGIDO)
