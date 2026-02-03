@@ -1,117 +1,30 @@
 import 'dotenv/config';
-import TelegramBot from 'node-telegram-bot-api';
-import chatBotFinanceService from '../services/chatBotFinanceService.js';
-import Usuario from '../models/Usuario.js';
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import { Model } from 'objection';
 
-if (!process.env.TELEGRAM_BOT_TOKEN) {
-  throw new Error('❌ TELEGRAM_BOT_TOKEN no definido');
+import db from './config/db.js';
+import router from './routes/index.js';
+
+Model.knex(db);
+
+const app = express();
+
+app.use(cors({ origin: true }));
+app.use(express.json());
+app.use(morgan('dev'));
+
+app.use('/api', router);
+
+// ✅ ARRANQUE DEL SERVIDOR PRIMERO
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`🚀 Backend running on port ${PORT}`);
+});
+
+// ✅ BOT DESPUÉS (NO BLOQUEA)
+if (process.env.ENABLE_TELEGRAM === 'true') {
+  import('./bot/startTelegramBot.js')
+    .then(m => m.startTelegramBot());
 }
-
-let bot;
-
-// 👇 EVITA DOBLE INICIALIZACIÓN
-if (global.telegramBot) {
-  console.log('⚠️ Bot ya iniciado, reutilizando instancia');
-  bot = global.telegramBot;
-} else {
-  console.log('🤖 Iniciando SmartFin Telegram Bot (AI Mode)...');
-
-  bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, {
-    polling: {
-      interval: 300,
-      autoStart: true,
-      params: {
-        timeout: 10
-      }
-    }
-  });
-
-  global.telegramBot = bot;
-
-  // Handle polling errors
-  bot.on('polling_error', (error) => {
-    console.error('❌ Polling Error:', error.code, error.message);
-
-    if (error.code === 'ETELEGRAM' && error.message.includes('409')) {
-      console.error('\n⚠️  CONFLICTO DETECTADO ⚠️');
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.error('Hay otra instancia del bot corriendo.');
-      console.error('');
-      console.error('Posibles causas:');
-      console.error('  1. El bot está desplegado en Railway/Heroku/Vercel');
-      console.error('  2. Hay otra terminal con el bot corriendo');
-      console.error('  3. Otra aplicación está usando el mismo bot token');
-      console.error('');
-      console.error('Soluciones:');
-      console.error('  • Detén el bot en producción temporalmente');
-      console.error('  • O crea un bot de desarrollo separado con @BotFather');
-      console.error('  • O cierra todas las otras terminales con Node.js');
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-    }
-  });
-
-  console.log('✅ SmartFin Telegram Bot activo (Modo Conversacional AI)');
-
-  // ===== TU CÓDIGO ACTUAL =====
-  const userSessions = new Map();
-
-  async function ensureUser(telegramUser) {
-    const telegramId = String(telegramUser.id);
-
-    let usuario = await Usuario.query().findOne({ telegram_id: telegramId });
-
-    if (!usuario) {
-      usuario = await Usuario.query().insert({
-        telegram_id: telegramId,
-        nombre: telegramUser.first_name || telegramUser.username || 'Usuario Telegram',
-        activo: true,
-      });
-    }
-
-    return usuario.user_id;
-  }
-
-  // Prevenir duplicidad de manejadores si la instancia se reutiliza
-  bot.removeAllListeners('message');
-
-  bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
-    const text = msg.text;
-    if (!text) return;
-
-    try {
-      let userId = userSessions.get(chatId);
-
-      if (!userId) {
-        userId = await ensureUser(msg.from);
-        userSessions.set(chatId, userId);
-      }
-
-      await bot.sendChatAction(chatId, 'typing');
-
-      const result = await chatBotFinanceService.processMessage(userId, text);
-
-      let cleanResponse = result.response
-        .replace(/####+\s*/g, '')
-        .replace(/\*\*\*\*/g, '**');
-
-      try {
-        await bot.sendMessage(chatId, cleanResponse, { parse_mode: 'Markdown' });
-      } catch (sendError) {
-        console.warn('⚠️ Error enviando Markdown, intentando texto plano:', sendError.message);
-        await bot.sendMessage(chatId, cleanResponse);
-      }
-
-    } catch (error) {
-      console.error('❌ TELEGRAM BOT ERROR:', error);
-      const fallback = "Hola 👋 Tuve un pequeño problema técnico, pero ya estoy informando al equipo. " +
-        "Puedes seguir intentando o registrar tus datos manualmente 😊";
-
-      bot.sendMessage(chatId, fallback);
-    }
-  });
-
-  console.log('💬 Bot listo para recibir mensajes');
-}
-
-export default bot;
