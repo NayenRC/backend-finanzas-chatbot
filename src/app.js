@@ -17,20 +17,15 @@ app.use(morgan('dev'));
 
 app.use('/api', router);
 
+// 🚀 EXPRESS PRIMERO
 const PORT = process.env.PORT || 3000;
-app.get('/', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: '🚀 SmartFin Backend API running',
-  });
-});
-
 app.listen(PORT, () => {
-  console.log(`🚀 Backend running`);
-
-  if (process.env.ENABLE_TELEGRAM === 'true') {
-  import('./bot/startTelegramBot.js')
-    .then(m => m.startTelegramBot());
-}
-
+  console.log(`🚀 Backend running on port ${PORT}`);
 });
+
+// 🤖 BOT DESPUÉS (NO BLOQUEA)
+if (process.env.ENABLE_TELEGRAM === 'true') {
+  import('./bot/startTelegramBot.js')
+    .then(m => m.startTelegramBot())
+    .catch(err => console.error('❌ Error iniciando bot:', err));
+}
