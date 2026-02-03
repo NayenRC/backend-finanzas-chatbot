@@ -93,13 +93,108 @@ async function createIncome(userId, data) {
   }
 }
 
+/**
+ * Obtener resumen de ingresos en un rango de fechas
+ */
+async function getIncomeSummary(userId, range) {
+  try {
+    const query = Ingreso.query().where('user_id', userId);
+    if (range?.startDate) query.where('fecha', '>=', range.startDate);
+    if (range?.endDate) query.where('fecha', '<=', range.endDate);
+
+    const result = await query.sum('monto as total_monto').first();
+    return result || { total_monto: 0 };
+  } catch (error) {
+    console.error('❌ Error getting income summary:', error);
+    return { total_monto: 0 };
+  }
+}
+
+/**
+ * Obtener resumen de gastos en un rango de fechas
+ */
+async function getExpenseSummary(userId, range) {
+  try {
+    const query = Gasto.query().where('user_id', userId);
+    if (range?.startDate) query.where('fecha', '>=', range.startDate);
+    if (range?.endDate) query.where('fecha', '<=', range.endDate);
+
+    const result = await query.sum('monto as total_monto').first();
+    return result || { total_monto: 0 };
+  } catch (error) {
+    console.error('❌ Error getting expense summary:', error);
+    return { total_monto: 0 };
+  }
+}
+
+/**
+ * Obtener ingresos detallados
+ */
+async function getIncomes(userId, range) {
+  try {
+    const query = Ingreso.query().where('user_id', userId).orderBy('fecha', 'desc');
+    if (range?.startDate) query.where('fecha', '>=', range.startDate);
+    if (range?.endDate) query.where('fecha', '<=', range.endDate);
+    if (range?.limit) query.limit(range.limit);
+
+    return await query;
+  } catch (error) {
+    console.error('❌ Error getting incomes:', error);
+    return [];
+  }
+}
+
+/**
+ * Obtener gastos detallados
+ */
+async function getExpenses(userId, range) {
+  try {
+    const query = Gasto.query().where('user_id', userId).orderBy('fecha', 'desc');
+    if (range?.startDate) query.where('fecha', '>=', range.startDate);
+    if (range?.endDate) query.where('fecha', '<=', range.endDate);
+    if (range?.limit) query.limit(range.limit);
+
+    return await query;
+  } catch (error) {
+    console.error('❌ Error getting expenses:', error);
+    return [];
+  }
+}
+
+/**
+ * Obtener gastos agrupados por categoría
+ */
+async function getExpensesByCategory(userId, range) {
+  try {
+    const query = Gasto.query()
+      .select('categoria.nombre as categoria')
+      .sum('monto as total')
+      .joinRelated('categoria')
+      .where('gasto.user_id', userId)
+      .groupBy('categoria.nombre');
+
+    if (range?.startDate) query.where('fecha', '>=', range.startDate);
+    if (range?.endDate) query.where('fecha', '<=', range.endDate);
+
+    return await query;
+  } catch (error) {
+    console.error('❌ Error getting expenses by category:', error);
+    return [];
+  }
+}
+
 /* ==================================================
    EXPORT
-================================================== */
+ ================================================== */
 export default {
   getChatHistory,
   saveChatMessage,
   getCategories,
   createExpense,
   createIncome,
+  getIncomeSummary,
+  getExpenseSummary,
+  getIncomes,
+  getExpenses,
+  getExpensesByCategory,
 };

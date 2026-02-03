@@ -55,7 +55,10 @@ export function startTelegramBot() {
       );
     } catch (err) {
       console.error('❌ BOT ERROR:', err);
-      await bot.sendMessage(chatId, 'Error interno 😕');
+      await bot.sendMessage(
+        chatId,
+        'Hola 👋 Tuve un problema técnico, pero sigo atento. Por favor intenta de nuevo en un momento 😊'
+      );
     }
   });
 

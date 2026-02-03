@@ -299,10 +299,6 @@ No inventes datos.
             throw new Error('Error parseando respuesta JSON de OpenRouter (Movimiento)');
         }
     }
-    catch(error) {
-        console.error("OPENROUTER FAILED:", error);
-        throw error;
-    }
 
 }
 
