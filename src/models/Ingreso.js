@@ -1,6 +1,4 @@
 import Model from './Model.js';
-
-import Model from './Model.js';
 import Categoria from './Categoria.js';
 
 class Ingreso extends Model {
@@ -33,3 +31,4 @@ class Ingreso extends Model {
 }
 
 export default Ingreso;
+
