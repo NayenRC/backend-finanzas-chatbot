@@ -56,72 +56,80 @@ export function startTelegramBot() {
    */
   async function handleEmailLink(chatId, text, pendingData) {
     const { telegramId, telegramUser } = pendingData;
-    const input = text.trim().toLowerCase();
+    const input = text.trim();
 
-    // Si escribe "nuevo", crear cuenta sin email
-    if (input === 'nuevo' || input === 'nueva') {
-      const usuario = await Usuario.query().insert({
-        telegram_id: telegramId,
-        nombre: telegramUser.first_name || telegramUser.username || 'Usuario Telegram',
-        activo: true,
-      });
+    try {
+      const lower = input.toLowerCase();
 
-      pendingEmailVerification.delete(chatId);
-      userSessions.set(chatId, usuario.user_id);
+      // Si escribe "nuevo", crear cuenta sin email
+      if (lower === 'nuevo' || lower === 'nueva') {
+        const usuario = await Usuario.query().insert({
+          telegram_id: telegramId,
+          nombre: telegramUser.first_name || telegramUser.username || 'Usuario Telegram',
+          activo: true,
+        });
 
-      await bot.sendMessage(chatId, 
-        `✅ ¡Cuenta creada!\n\n` +
-        `Ahora puedes registrar gastos e ingresos. Tus datos estarán solo en Telegram.\n\n` +
-        `💡 Si después quieres vincular con la web, escribe "vincular".`
-      );
-      return;
-    }
+        pendingEmailVerification.delete(chatId);
+        userSessions.set(chatId, usuario.user_id);
 
-    // Validar formato de email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(input)) {
-      await bot.sendMessage(chatId, 
-        `❌ Eso no parece un email válido.\n\nEscribe tu email o "nuevo" para continuar sin vincular.`
-      );
-      return;
-    }
+        await bot.sendMessage(chatId,
+          `✅ ¡Cuenta creada!\n\n` +
+          `Ahora puedes registrar gastos e ingresos. Tus datos estarán solo en Telegram.\n\n` +
+          `💡 Si después quieres vincular con la web, escribe "vincular".`
+        );
+        return;
+      }
 
-    const email = input;
+      // Validar formato de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(lower)) {
+        await bot.sendMessage(chatId,
+          `❌ Eso no parece un email válido.\n\nEscribe tu email o "nuevo" para continuar sin vincular.`
+        );
+        return;
+      }
 
-    // Buscar usuario con ese email
-    const usuarioWeb = await Usuario.query().findOne({ email });
+      const email = lower;
 
-    if (usuarioWeb) {
-      // Vincular telegram_id a la cuenta existente
-      await Usuario.query()
-        .patch({ telegram_id: telegramId })
-        .where('user_id', usuarioWeb.user_id);
+      // Buscar usuario con ese email
+      const usuarioWeb = await Usuario.query().findOne({ email });
 
-      pendingEmailVerification.delete(chatId);
-      userSessions.set(chatId, usuarioWeb.user_id);
+      if (usuarioWeb) {
+        // Vincular telegram_id a la cuenta existente
+        await Usuario.query()
+          .patch({ telegram_id: telegramId })
+          .where('user_id', usuarioWeb.user_id);
 
-      await bot.sendMessage(chatId, 
-        `🔗 ¡Cuenta vinculada exitosamente!\n\n` +
-        `Ahora tus gastos e ingresos se verán tanto aquí como en la app web.\n\n` +
-        `¿En qué te puedo ayudar? 💰`
-      );
-    } else {
-      // No existe cuenta con ese email - crear nueva con email
-      const usuario = await Usuario.query().insert({
-        telegram_id: telegramId,
-        email: email,
-        nombre: telegramUser.first_name || telegramUser.username || 'Usuario Telegram',
-        activo: true,
-      });
+        pendingEmailVerification.delete(chatId);
+        userSessions.set(chatId, usuarioWeb.user_id);
 
-      pendingEmailVerification.delete(chatId);
-      userSessions.set(chatId, usuario.user_id);
+        await bot.sendMessage(chatId,
+          `🔗 ¡Cuenta vinculada exitosamente!\n\n` +
+          `Ahora tus gastos e ingresos se verán tanto aquí como en la app web.\n\n` +
+          `¿En qué te puedo ayudar? 💰`
+        );
+      } else {
+        // No existe cuenta con ese email - crear nueva con email
+        const usuario = await Usuario.query().insert({
+          telegram_id: telegramId,
+          email: email,
+          nombre: telegramUser.first_name || telegramUser.username || 'Usuario Telegram',
+          activo: true,
+        });
 
-      await bot.sendMessage(chatId, 
-        `✅ ¡Cuenta creada con email ${email}!\n\n` +
-        `Cuando te registres en la web con este mismo email, tus datos estarán sincronizados.\n\n` +
-        `¿En qué te puedo ayudar? 💰`
-      );
+        pendingEmailVerification.delete(chatId);
+        userSessions.set(chatId, usuario.user_id);
+
+        await bot.sendMessage(chatId,
+          `✅ ¡Cuenta creada con email ${email}!\n\n` +
+          `Cuando te registres en la web con este mismo email, tus datos estarán sincronizados.\n\n` +
+          `¿En qué te puedo ayudar? 💰`
+        );
+      }
+    } catch (err) {
+      console.error('❌ Error en handleEmailLink:', err);
+      // Envío temporal del mensaje de error al usuario para depuración
+      await bot.sendMessage(chatId, `❌ Ocurrió un error. Intenta de nuevo.\n\nError: ${err.message}`);
     }
   }
 
