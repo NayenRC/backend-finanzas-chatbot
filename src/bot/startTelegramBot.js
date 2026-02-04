@@ -1,6 +1,10 @@
 import TelegramBot from 'node-telegram-bot-api';
 import chatBotFinanceService from '../services/chatBotFinanceService.js';
 import Usuario from '../models/Usuario.js';
+import Gasto from '../models/Gasto.js';
+import Ingreso from '../models/Ingreso.js';
+import ChatMensaje from '../models/ChatMensaje.js';
+import { transaction } from 'objection';
 
 let botInstance = null;
 
@@ -95,19 +99,81 @@ export function startTelegramBot() {
       const usuarioWeb = await Usuario.query().findOne({ email });
 
       if (usuarioWeb) {
-        // Vincular telegram_id a la cuenta existente
-        await Usuario.query()
-          .patch({ telegram_id: telegramId })
-          .where('user_id', usuarioWeb.user_id);
+        // Buscar posible cuenta Telegram-only existente con este telegramId
+        const duplicateUsuario = await Usuario.query()
+          .findOne({ telegram_id: telegramId })
+          .whereNot('user_id', usuarioWeb.user_id);
 
-        pendingEmailVerification.delete(chatId);
-        userSessions.set(chatId, usuarioWeb.user_id);
+        if (duplicateUsuario) {
+          // Contar registros a migrar
+          const gastosCntRow = await Gasto.query()
+            .count('id_gasto as cnt')
+            .where('user_id', duplicateUsuario.user_id)
+            .first();
+          const ingresosCntRow = await Ingreso.query()
+            .count('id_ingreso as cnt')
+            .where('user_id', duplicateUsuario.user_id)
+            .first();
+          const chatsCntRow = await ChatMensaje.query()
+            .count('id_chat as cnt')
+            .where('user_id', duplicateUsuario.user_id)
+            .first();
 
-        await bot.sendMessage(chatId,
-          `🔗 ¡Cuenta vinculada exitosamente!\n\n` +
-          `Ahora tus gastos e ingresos se verán tanto aquí como en la app web.\n\n` +
-          `¿En qué te puedo ayudar? 💰`
-        );
+          const gastosCnt = Number(gastosCntRow?.cnt || 0);
+          const ingresosCnt = Number(ingresosCntRow?.cnt || 0);
+          const chatsCnt = Number(chatsCntRow?.cnt || 0);
+
+          try {
+            await transaction(Usuario.knex(), async (trx) => {
+              if (gastosCnt > 0) {
+                await Gasto.query(trx)
+                  .patch({ user_id: usuarioWeb.user_id })
+                  .where('user_id', duplicateUsuario.user_id);
+              }
+              if (ingresosCnt > 0) {
+                await Ingreso.query(trx)
+                  .patch({ user_id: usuarioWeb.user_id })
+                  .where('user_id', duplicateUsuario.user_id);
+              }
+              if (chatsCnt > 0) {
+                await ChatMensaje.query(trx)
+                  .patch({ user_id: usuarioWeb.user_id })
+                  .where('user_id', duplicateUsuario.user_id);
+              }
+
+              // Vincular telegram_id a la cuenta web y eliminar la cuenta temporal
+              await Usuario.query(trx)
+                .patch({ telegram_id: telegramId })
+                .where('user_id', usuarioWeb.user_id);
+              await Usuario.query(trx).deleteById(duplicateUsuario.user_id);
+            });
+
+            pendingEmailVerification.delete(chatId);
+            userSessions.set(chatId, usuarioWeb.user_id);
+
+            await bot.sendMessage(chatId,
+              `🔗 ¡Cuenta vinculada exitosamente!\n\n` +
+              `Se migraron ${gastosCnt} gastos, ${ingresosCnt} ingresos y ${chatsCnt} mensajes desde tu cuenta de Telegram.`
+            );
+          } catch (err) {
+            console.error('❌ Error migrando datos al vincular cuenta:', err);
+            await bot.sendMessage(chatId, `❌ Ocurrió un error al migrar tus datos. Intenta nuevamente.`);
+          }
+        } else {
+          // Vincular telegram_id a la cuenta existente
+          await Usuario.query()
+            .patch({ telegram_id: telegramId })
+            .where('user_id', usuarioWeb.user_id);
+
+          pendingEmailVerification.delete(chatId);
+          userSessions.set(chatId, usuarioWeb.user_id);
+
+          await bot.sendMessage(chatId,
+            `🔗 ¡Cuenta vinculada exitosamente!\n\n` +
+            `Ahora tus gastos e ingresos se verán tanto aquí como en la app web.\n\n` +
+            `¿En qué te puedo ayudar? 💰`
+          );
+        }
       } else {
         // No existe cuenta con ese email - crear nueva con email
         const usuario = await Usuario.query().insert({
