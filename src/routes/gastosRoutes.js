@@ -6,12 +6,10 @@ import {
   update,
   destroy,
 } from '../controllers/GastoController.js';
-import { authenticateToken } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 
-router.use(authenticateToken);
-
+// authenticateToken ya se aplica en routes/index.js
 router.get('/', index);
 router.get('/:id', show);
 router.post('/', store);

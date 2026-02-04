@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { authenticateToken } from "../middlewares/authMiddleware.js";
 import { getDashboardResumen } from "../controllers/DashboardController.js";
 
 const router = Router();
 
-router.get("/resumen", authenticateToken, getDashboardResumen);
+// authenticateToken ya se aplica en routes/index.js
+router.get("/resumen", getDashboardResumen);
 
 export default router;
