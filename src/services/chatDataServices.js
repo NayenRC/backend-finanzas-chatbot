@@ -170,11 +170,11 @@ async function getExpensesByCategory(userId, range) {
       .select('categoria.nombre as categoria')
       .sum('monto as total')
       .joinRelated('categoria')
-      .where('gasto.user_id', userId)
+      .where('gastos.user_id', userId)
       .groupBy('categoria.nombre');
 
-    if (range?.startDate) query.where('fecha', '>=', range.startDate);
-    if (range?.endDate) query.where('fecha', '<=', range.endDate);
+    if (range?.startDate) query.where('gastos.fecha', '>=', range.startDate);
+    if (range?.endDate) query.where('gastos.fecha', '<=', range.endDate);
 
     return await query;
   } catch (error) {
