@@ -45,8 +45,8 @@ export function startTelegramBot() {
 
     // 2. Usuario nuevo - preguntar si quiere vincular
     pendingEmailVerification.set(chatId, { telegramId, telegramUser });
-    
-    await bot.sendMessage(chatId, 
+
+    await bot.sendMessage(chatId,
       `👋 ¡Hola ${telegramUser.first_name || 'amigo'}!\n\n` +
       `Para sincronizar tus datos con la app web, escribe tu **email** registrado.\n\n` +
       `Si no tienes cuenta web, escribe "nuevo" para crear una cuenta solo de Telegram.`
@@ -119,6 +119,7 @@ export function startTelegramBot() {
             .where('user_id', duplicateUsuario.user_id)
             .first();
 
+
           const gastosCnt = Number(gastosCntRow?.cnt || 0);
           const ingresosCnt = Number(ingresosCntRow?.cnt || 0);
           const chatsCnt = Number(chatsCntRow?.cnt || 0);
@@ -136,9 +137,9 @@ export function startTelegramBot() {
                   .where('user_id', duplicateUsuario.user_id);
               }
               if (chatsCnt > 0) {
-                await ChatMensaje.query(trx)
-                  .patch({ user_id: usuarioWeb.user_id })
-                  .where('user_id', duplicateUsuario.user_id);
+                await db('chat_mensaje')
+                  .where('user_id', duplicateUsuario.user_id)
+                  .update({ user_id: usuarioWeb.user_id });
               }
 
               // Vincular telegram_id a la cuenta web y eliminar la cuenta temporal
@@ -210,14 +211,14 @@ export function startTelegramBot() {
       if (text.toLowerCase() === 'vincular' || text.toLowerCase() === '/vincular') {
         const telegramId = String(msg.from.id);
         const usuario = await Usuario.query().findOne({ telegram_id: telegramId });
-        
+
         if (usuario?.email) {
           await bot.sendMessage(chatId, `✅ Ya estás vinculado con: ${usuario.email}`);
           return;
         }
 
         pendingEmailVerification.set(chatId, { telegramId, telegramUser: msg.from });
-        await bot.sendMessage(chatId, 
+        await bot.sendMessage(chatId,
           `🔗 Para vincular tu cuenta, escribe tu email registrado en la web:`
         );
         return;
