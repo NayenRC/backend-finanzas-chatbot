@@ -1,6 +1,6 @@
 import express from 'express';
 import { sendMessage, getHistory } from '../controllers/ChatController.js';
-import { authenticateToken } from '../middlewares/auth.js';
+import { authenticateToken } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 

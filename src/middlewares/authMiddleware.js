@@ -31,9 +31,10 @@ export async function authenticateToken(req, res, next) {
 
     // 3️⃣ ESTE es el user_id correcto
     req.user = {
-      id: usuario.user_id,   // ✅ TU BD
+      user_id: usuario.user_id, // 🔑 CLAVE
       email: usuario.email,
     };
+ 
 
     next();
 
