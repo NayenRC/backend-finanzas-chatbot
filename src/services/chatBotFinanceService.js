@@ -179,20 +179,18 @@ ${statusEmoji} Te queda **${porcentajeDisponible}%** disponible ($${formatCLP(di
   }
 }
 //metas 
-async function handleCreateSavingGoal(userTelegramId, message) {
+async function handleCreateSavingGoal(userId, message) {
   try {
-    const user = await chatDataService.getUserByTelegramId(userTelegramId);
-
-    if (!user) {
-      return "🔗 Para crear metas debes vincular tu cuenta con SmartFin.\n👉 Ve al Dashboard y vincúlala primero.";
-    }
-
+    // 1️⃣ IA clasifica
     const goalData = await openRouterService.classifySavingGoal(message);
 
+    // 2️⃣ Fallback números
     if (!goalData.monto_objetivo) {
       const match = message.match(/(\d+[.,]?\d*)/);
       if (match) {
-        goalData.monto_objetivo = Number(match[1].replace('.', '').replace(',', ''));
+        goalData.monto_objetivo = Number(
+          match[1].replace('.', '').replace(',', '')
+        );
       }
     }
 
@@ -200,14 +198,17 @@ async function handleCreateSavingGoal(userTelegramId, message) {
       return "🎯 Dime el nombre y el monto.\nEjemplo: *Quiero ahorrar 500 lucas para un auto*";
     }
 
-    await MetaAhorroService.crearMeta(user.id, {
+    // 3️⃣ CREAR META DIRECTO
+    await MetaAhorroService.crearMeta(userId, {
       nombre: goalData.nombre,
       monto_objetivo: goalData.monto_objetivo,
     });
 
     return `🏆 **Meta creada con éxito**
 🎯 ${goalData.nombre}
-💰 Objetivo: $${goalData.monto_objetivo.toLocaleString('es-CL')}`;
+💰 Objetivo: $${goalData.monto_objetivo.toLocaleString('es-CL')}
+
+📊 Ya puedes verla en tu Dashboard`;
 
   } catch (err) {
     console.error("❌ Error creando meta:", err);
