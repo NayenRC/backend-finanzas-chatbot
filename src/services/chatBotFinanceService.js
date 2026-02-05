@@ -199,7 +199,7 @@ async function handleCreateSavingGoal(userTelegramId, message) {
       return "🔗 Para crear metas debes vincular tu cuenta con SmartFin.\n👉 Ve al Dashboard y vincúlala primero.";
     }
 
-    // 2️⃣ IA
+    // 2️⃣ IA clasifica
     const goalData = await openRouterService.classifySavingGoal(message);
 
     // 3️⃣ Fallback millones
@@ -233,6 +233,7 @@ async function handleCreateSavingGoal(userTelegramId, message) {
     return "❌ Ocurrió un error al crear la meta. Intenta nuevamente 🙏";
   }
 }
+
 
 async function handleSavingMovement(userId, message) {
   try {
