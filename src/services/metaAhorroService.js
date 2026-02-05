@@ -13,15 +13,16 @@ class MetaAhorroService {
       throw new Error('Datos inválidos para crear la meta');
     }
 
-    const meta = await MetaAhorro.create({
+    const meta = await MetaAhorro.query().insert({
       user_id: userId,
       nombre: data.nombre,
       monto_objetivo: montoObjetivo,
-      monto_actual: 0
+      monto_actual: 0,
     });
 
     return meta;
   }
+
 
   /* ===============================
      Registrar movimiento de ahorro

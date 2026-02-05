@@ -179,29 +179,27 @@ ${statusEmoji} Te queda **${porcentajeDisponible}%** disponible ($${formatCLP(di
   }
 }
 //metas 
-// metas
 async function handleCreateSavingGoal(userId, message) {
   try {
-    // 1️⃣ IA
-    const goalData = await openRouterService.classifySavingGoal(message);
+    if (!userId) {
+      return "🔗 Para crear metas debes vincular tu cuenta con SmartFin.\n👉 Ve al Dashboard y vincúlala.";
+    }
 
+    const goalData = await openRouterService.classifySavingGoal(message);
     const esMensual = /mes|mensual/i.test(message);
 
-    // 2️⃣ Si es mensual y NO hay monto total → pedir aclaración
     if (esMensual && !goalData.monto_objetivo) {
       return (
         "💡 Veo que hablas de un ahorro mensual.\n\n" +
         "🎯 Para crear la meta necesito el **monto total**.\n" +
-        "Ejemplo:\n" +
-        "*Quiero ahorrar 5 millones para un auto*"
+        "Ejemplo:\n*Quiero ahorrar 5 millones para un auto*"
       );
     }
 
-    // 3️⃣ Fallback SOLO si NO es mensual
     if (!goalData.monto_objetivo && !esMensual) {
-      const match = message.match(/(\d+)\s*(mil|lucas|millon|millones)?/i);
+      const match = message.match(/(\d{1,3}(?:[.,]\d{3})*|\d+)\s*(mil|lucas|millon|millones)?/i);
       if (match) {
-        const base = Number(match[1]);
+        const base = Number(match[1].replace(/[.,]/g, ''));
         const unidad = match[2]?.toLowerCase();
 
         if (unidad === 'mil' || unidad === 'lucas') {
@@ -214,26 +212,18 @@ async function handleCreateSavingGoal(userId, message) {
       }
     }
 
-    // 4️⃣ Fallback nombre
     if (!goalData.nombre) {
       const matchNombre = message.match(/para (un|una)?\s?(.+)/i);
-      if (matchNombre) {
-        goalData.nombre = matchNombre[2];
-      }
+      if (matchNombre) goalData.nombre = matchNombre[2];
     }
 
-    // 5️⃣ Validación final
     if (!goalData.nombre || !goalData.monto_objetivo) {
       return (
         "🎯 Para crear tu meta dime el **monto total** y el objetivo.\n\n" +
-        "Ejemplos válidos:\n" +
-        "• *Quiero ahorrar 5 millones para un auto*\n" +
-        "• *Ahorrar 2 millones para vacaciones*\n\n" +
-        "Luego podrás aportar mensual 💰"
+        "Ejemplos:\n• *Quiero ahorrar 5 millones para un auto*\n• *Ahorrar 2 millones para vacaciones*"
       );
     }
 
-    // 6️⃣ Crear meta
     await MetaAhorroService.crearMeta(userId, {
       nombre: goalData.nombre,
       monto_objetivo: goalData.monto_objetivo,
