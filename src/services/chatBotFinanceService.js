@@ -71,7 +71,7 @@ async function processMessage(userId, userMessage) {
       case 'CONSULTAR':
         response =
           '📊 Tus métricas se muestran en el Dashboard web.\n\n' +
-          '👉 Ingresa a SmartFin para ver gráficos y detalles.';
+          '👉 Ingresa a https://smartfin-front.vercel.app/ para ver gráficos y detalles.';
         break;
 
       default:
