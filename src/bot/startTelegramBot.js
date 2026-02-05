@@ -49,9 +49,11 @@ export function startTelegramBot() {
 
     await bot.sendMessage(chatId,
       `👋 ¡Hola ${telegramUser.first_name || 'amigo'}!\n\n` +
-      `Para sincronizar tus datos con la app web, escribe tu **email** registrado.\n\n` +
-      `Si no tienes cuenta web, escribe "nuevo" para crear una cuenta solo de Telegram.`
+      `Puedo ayudarte a registrar gastos e ingresos desde aquí 💰\n\n` +
+      `⚠️ *Importante*: para que tus métricas se vean en el *Dashboard web*, debes *vincular tu cuenta*.\n\n` +
+      `✉️ Escribe tu *email registrado en la web* o escribe *"nuevo"* para usar solo Telegram.`
     );
+
 
     return { userId: null, needsLink: true };
   }
@@ -153,7 +155,30 @@ export function startTelegramBot() {
               await Usuario.query(trx)
                 .patch({ telegram_id: telegramId })
                 .where('user_id', usuarioWeb.user_id);
-              await Usuario.query(trx).deleteById(duplicateUsuario.user_id);
+              await transaction(Usuario.knex(), async (trx) => {
+                if (gastosCnt > 0) {
+                  await Gasto.query(trx)
+                    .patch({ user_id: usuarioWeb.user_id })
+                    .where('user_id', duplicateUsuario.user_id);
+                }
+
+                if (ingresosCnt > 0) {
+                  await Ingreso.query(trx)
+                    .patch({ user_id: usuarioWeb.user_id })
+                    .where('user_id', duplicateUsuario.user_id);
+                }
+
+                if (chatsCnt > 0) {
+                  await trx('chat_mensaje')
+                    .where('user_id', duplicateUsuario.user_id)
+                    .update({ user_id: usuarioWeb.user_id });
+                }
+
+                // Vincular telegram_id a la cuenta web
+                await Usuario.query(trx)
+                  .patch({ telegram_id: telegramId })
+                  .where('user_id', usuarioWeb.user_id);
+              });
             });
 
             pendingEmailVerification.delete(chatId);
