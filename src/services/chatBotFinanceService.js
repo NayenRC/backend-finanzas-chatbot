@@ -179,58 +179,36 @@ ${statusEmoji} Te queda **${porcentajeDisponible}%** disponible ($${formatCLP(di
   }
 }
 //metas 
-
-const user = await chatDataService.getUserByTelegramId(userId);
-
-if (!user) {
-  return "⚠️ Debes vincular tu cuenta con SmartFin antes de crear metas.👉 Ve al Dashboard para vincularla.";
-}
-await MetaAhorroService.crearMeta(user.id, {
-  nombre: goalData.nombre,
-  monto_objetivo: goalData.monto_objetivo,
-});
-
 async function handleCreateSavingGoal(userTelegramId, message) {
   try {
-    // 1️⃣ Verificar vinculación
     const user = await chatDataService.getUserByTelegramId(userTelegramId);
 
     if (!user) {
       return "🔗 Para crear metas debes vincular tu cuenta con SmartFin.\n👉 Ve al Dashboard y vincúlala primero.";
     }
 
-    // 2️⃣ IA clasifica
     const goalData = await openRouterService.classifySavingGoal(message);
 
-    // 3️⃣ Fallback millones
     if (!goalData.monto_objetivo) {
       const match = message.toLowerCase().match(/(\d+)\s*(mill[oó]n|millones)/);
-      if (match) {
-        goalData.monto_objetivo = Number(match[1]) * 1_000_000;
-      }
+      if (match) goalData.monto_objetivo = Number(match[1]) * 1_000_000;
     }
 
     if (!goalData.nombre || !goalData.monto_objetivo) {
       return "🎯 Dime el nombre y el monto.\nEjemplo: *Quiero ahorrar 2 millones para un auto*";
     }
 
-    // 4️⃣ Crear meta con user_id REAL
     await MetaAhorroService.crearMeta(user.user_id, {
       nombre: goalData.nombre,
       monto_objetivo: goalData.monto_objetivo,
     });
 
     return `🏆 **Meta creada con éxito**
-
 🎯 ${goalData.nombre}
-💰 Objetivo: $${goalData.monto_objetivo.toLocaleString('es-CL')}
-
-👉 Puedes aportar diciendo:
-*Ahorra 50 lucas para ${goalData.nombre}*`;
-
+💰 Objetivo: $${goalData.monto_objetivo.toLocaleString('es-CL')}`;
   } catch (err) {
-    console.error("❌ Error creando meta REAL:", err);
-    return "❌ Ocurrió un error al crear la meta. Intenta nuevamente 🙏";
+    console.error(err);
+    return "❌ Ocurrió un error al crear la meta 😕";
   }
 }
 
