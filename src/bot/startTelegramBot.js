@@ -130,8 +130,39 @@ export function startTelegramBot() {
         '❌ Ocurrió un error al vincular. Intenta nuevamente.'
       );
     }
+    // 🔗 COMANDO SISTEMA: VINCULAR CUENTA
+if (text.toLowerCase() === 'vincular' || text.toLowerCase() === '/vincular') {
+  const telegramId = String(msg.from.id);
+
+  const usuario = await Usuario.query().findOne({ telegram_id: telegramId });
+
+  if (usuario?.email) {
+    await bot.sendMessage(
+      chatId,
+      `✅ Tu cuenta ya está vinculada con:\n\n📧 ${usuario.email}\n\n📊 Tus métricas se muestran en el Dashboard web.`
+    );
+    return;
   }
 
+  pendingEmailVerification.set(chatId, {
+    telegramId,
+    telegramUser: msg.from,
+  });
+
+  await bot.sendMessage(
+    chatId,
+    `🔗 *Vincular cuenta con Dashboard*\n\n` +
+      `Para que tus gastos e ingresos se vean en la app web,\n` +
+      `escribe tu *email registrado*.\n\n` +
+      `✉️ Ejemplo: usuario@gmail.com`,
+    { parse_mode: 'Markdown' }
+  );
+
+  return; // ⛔️ MUY IMPORTANTE
+}
+
+  }
+  
   /* ===========================
      MENSAJES
   =========================== */
