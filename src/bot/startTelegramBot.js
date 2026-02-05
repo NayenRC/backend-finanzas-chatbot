@@ -39,9 +39,9 @@ export function startTelegramBot() {
     await bot.sendMessage(
       chatId,
       `👋 ¡Hola ${telegramUser.first_name || 'amigo'}!\n\n` +
-        `Puedo ayudarte a registrar gastos e ingresos 💰\n\n` +
-        `📊 *Para ver tus métricas en el Dashboard web*, necesitas *vincular tu cuenta*.\n\n` +
-        `✉️ Escribe tu *email registrado en la web* o escribe *"nuevo"* para usar solo Telegram.`
+      `Puedo ayudarte a registrar gastos e ingresos 💰\n\n` +
+      `📊 *Para ver tus métricas en el Dashboard web*, necesitas *vincular tu cuenta*.\n\n` +
+      `✉️ Escribe tu *email registrado en la web* o escribe *"nuevo"* para usar solo Telegram.`
     );
 
     return null;
@@ -121,7 +121,7 @@ export function startTelegramBot() {
       await bot.sendMessage(
         chatId,
         `🔗 ¡Cuenta vinculada exitosamente!\n\n` +
-          `📊 Tus gastos e ingresos ahora se reflejarán en el *Dashboard web*.`
+        `📊 Tus gastos e ingresos ahora se reflejarán en el *Dashboard web*.`
       );
     } catch (err) {
       console.error('❌ Error vinculando:', err);
@@ -131,46 +131,87 @@ export function startTelegramBot() {
       );
     }
     // 🔗 COMANDO SISTEMA: VINCULAR CUENTA
-if (text.toLowerCase() === 'vincular' || text.toLowerCase() === '/vincular') {
-  const telegramId = String(msg.from.id);
+    if (text.toLowerCase() === 'vincular' || text.toLowerCase() === '/vincular') {
+      const telegramId = String(msg.from.id);
 
-  const usuario = await Usuario.query().findOne({ telegram_id: telegramId });
+      const usuario = await Usuario.query().findOne({ telegram_id: telegramId });
 
-  if (usuario?.email) {
-    await bot.sendMessage(
-      chatId,
-      `✅ Tu cuenta ya está vinculada con:\n\n📧 ${usuario.email}\n\n📊 Tus métricas se muestran en el Dashboard web.`
-    );
-    return;
+      if (usuario?.email) {
+        await bot.sendMessage(
+          chatId,
+          `✅ Tu cuenta ya está vinculada con:\n\n📧 ${usuario.email}\n\n📊 Tus métricas se muestran en el Dashboard web.`
+        );
+        return;
+      }
+
+      pendingEmailVerification.set(chatId, {
+        telegramId,
+        telegramUser: msg.from,
+      });
+
+      await bot.sendMessage(
+        chatId,
+        `🔗 *Vincular cuenta con Dashboard*\n\n` +
+        `Para que tus gastos e ingresos se vean en la app web,\n` +
+        `escribe tu *email registrado*.\n\n` +
+        `✉️ Ejemplo: usuario@gmail.com`,
+        { parse_mode: 'Markdown' }
+      );
+
+      return; // ⛔️ MUY IMPORTANTE
+    }
+
   }
 
-  pendingEmailVerification.set(chatId, {
-    telegramId,
-    telegramUser: msg.from,
-  });
-
-  await bot.sendMessage(
-    chatId,
-    `🔗 *Vincular cuenta con Dashboard*\n\n` +
-      `Para que tus gastos e ingresos se vean en la app web,\n` +
-      `escribe tu *email registrado*.\n\n` +
-      `✉️ Ejemplo: usuario@gmail.com`,
-    { parse_mode: 'Markdown' }
-  );
-
-  return; // ⛔️ MUY IMPORTANTE
-}
-
-  }
-  
   /* ===========================
      MENSAJES
   =========================== */
   bot.on('message', async (msg) => {
     if (!msg.text) return;
 
+    const text = msg.text.trim().toLowerCase();
     const chatId = msg.chat.id;
-    const text = msg.text.trim();
+
+    /* ===========================
+       COMANDOS DEL SISTEMA
+    =========================== */
+
+    // 🔗 VINCULAR CUENTA
+    if (text === 'vincular' || text === '/vincular') {
+      pendingEmailVerification.set(chatId, {
+        telegramId: String(msg.from.id),
+        telegramUser: msg.from,
+      });
+
+      await bot.sendMessage(
+        chatId,
+        `🔗 *Vincular cuenta con Dashboard*\n\n` +
+        `Para que tus gastos e ingresos se vean en la app web,\n` +
+        `escribe tu *email registrado*.\n\n` +
+        `📊 Esto permitirá ver tus métricas en el Dashboard.`,
+        { parse_mode: 'Markdown' }
+      );
+
+      return; // ⛔️ CRÍTICO
+    }
+
+    // 📊 DASHBOARD
+    if (
+      text.includes('dashboard') ||
+      text.includes('ver dashboard') ||
+      text.includes('mi dashboard')
+    ) {
+      await bot.sendMessage(
+        chatId,
+        `📊 *Dashboard SmartFin*\n\n` +
+        `Tus métricas se muestran en la app web.\n\n` +
+        `👉 Si aún no ves datos, escribe *vincular* para sincronizar tu cuenta.`,
+        { parse_mode: 'Markdown' }
+      );
+
+      return; // ⛔️ CRÍTICO
+    }
+
 
     if (pendingEmailVerification.has(chatId)) {
       await handleEmailLink(chatId, text, pendingEmailVerification.get(chatId));

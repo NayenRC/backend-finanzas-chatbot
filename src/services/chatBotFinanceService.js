@@ -69,7 +69,9 @@ async function processMessage(userId, userMessage) {
         break;
 
       case 'CONSULTAR':
-        response = await handleQuery(userId,userMessage, formattedHistory);
+        response =
+          '📊 Tus métricas se muestran en el Dashboard web.\n\n' +
+          '👉 Ingresa a SmartFin para ver gráficos y detalles.';
         break;
 
       default:
