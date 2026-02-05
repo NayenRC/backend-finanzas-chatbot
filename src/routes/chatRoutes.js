@@ -1,11 +1,10 @@
-import { Router } from "express";
-import { processMessage } from "../controllers/ChatController.js";
-import { authenticateToken } from "../middlewares/authMiddleware.js";
+import express from 'express';
+import { sendMessage, getHistory } from '../controllers/ChatController.js';
+import { authenticateToken } from '../middlewares/auth.js';
 
-const router = Router();
+const router = express.Router();
 
-router.use(authenticateToken);
-
-router.post("/", processMessage);
+router.post('/message', authenticateToken, sendMessage);
+router.get('/history', authenticateToken, getHistory);
 
 export default router;
