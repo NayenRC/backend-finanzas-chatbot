@@ -178,6 +178,17 @@ ${statusEmoji} Te queda **${porcentajeDisponible}%** disponible ($${formatCLP(di
     return '';
   }
 }
+//metas 
+
+const user = await chatDataService.getUserByTelegramId(userId);
+
+if (!user) {
+  return "⚠️ Debes vincular tu cuenta con SmartFin antes de crear metas.\n👉 Ve al Dashboard para vincularla.";
+}
+await MetaAhorroService.crearMeta(user.id, {
+  nombre: goalData.nombre,
+  monto_objetivo: goalData.monto_objetivo,
+});
 
 async function handleCreateSavingGoal(userId, message) {
   try {
@@ -218,7 +229,7 @@ async function handleCreateSavingGoal(userId, message) {
 *Ahorra 50 lucas para ${goalData.nombre}*`;
   } catch (err) {
     console.error("❌ Error creando meta:", err);
-    return "❌ No pude crear la meta en este momento 😕";
+    return "🔗 Para crear metas debes vincular tu cuenta con SmartFin.\n👉 Ingresa al Dashboard y vincúlala primero.";
   }
 }
 async function handleSavingMovement(userId, message) {
