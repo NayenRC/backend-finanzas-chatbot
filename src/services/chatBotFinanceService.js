@@ -1,6 +1,7 @@
 import openRouterService from './openRouterService.js';
 import chatDataService from './chatDataServices.js';
 import MetaAhorroService from "./metaAhorroService.js";
+import MetaAhorro from '../models/MetaAhorro.js';
 
 
 /**
@@ -70,17 +71,6 @@ async function processMessage(userId, userMessage) {
         response = await handleIncome(userId, userMessage);
         break;
 
-      case 'CONSULTAR':
-        response =
-          '📊 Tus métricas se muestran en el Dashboard web.\n\n' +
-          '👉 Ingresa a https://smartfin-front.vercel.app/ para ver gráficos y detalles.';
-        break;
-
-      default:
-        response = await openRouterService.generateGeneralResponse(
-          userMessage,
-          formattedHistory
-        );
       case 'CREAR_META':
       case 'CREAR_META_AHORRO':
         response = await handleCreateSavingGoal(userId, userMessage);
@@ -89,6 +79,19 @@ async function processMessage(userId, userMessage) {
       case 'AGREGAR_A_META':
         response = await handleSavingMovement(userId, userMessage);
         break;
+
+      case 'CONSULTAR':
+        response =
+          '📊 Tus métricas se muestran en el Dashboard web.\n\n' +
+          '👉 Ingresa a https://smartfin-front.vercel.app/ para ver gráficos y detalles.';
+        break;
+
+
+      default:
+        response = await openRouterService.generateGeneralResponse(
+          userMessage,
+          formattedHistory
+        );
 
     }
 

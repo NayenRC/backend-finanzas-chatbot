@@ -236,6 +236,9 @@ Explica brevemente que puedes ayudar a registrar gastos, ingresos y ver resúmen
     async classifySavingGoal(userMessage) {
         const systemPrompt = `
 Extrae información para crear una META DE AHORRO.
+Si el mensaje contiene palabras como:
+"ahorrar", "meta", "juntar", "guardar", "objetivo"
+la intención DEBE ser CREAR_META_AHORRO.
 
 Convierte expresiones chilenas:
 - "500 lucas" → 500000
