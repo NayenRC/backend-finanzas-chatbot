@@ -1,25 +1,27 @@
-import chatBotFinanceService from '../services/chatBotFinanceService.js';
+import chatService from '../services/chatService.js';
 
-export const processMessage = async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const { mensaje } = req.body;
+export async function sendMessage(req, res) {
+  try {
+    const user_id = req.user.user_id; // viene del middleware auth
+    const { message } = req.body;
 
-        if (!mensaje) {
-            return res.status(400).json({ message: 'El mensaje es requerido' });
-        }
+    const reply = await chatService.processMessage(user_id, message);
 
-        // Call the finance chatbot service
-        const result = await chatBotFinanceService.processMessage(userId, mensaje);
+    res.json({ reply });
 
-        // Clean up response if needed (remove markdown artifacts if the frontend doesn't render them well, 
-        // but React usually handles markdown or we display raw text. The bot logic removes #### locally)
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Error procesando mensaje' });
+  }
+}
 
-        // The aiChatCommand returns { success, response, intent }
-        res.json(result);
+export async function getHistory(req, res) {
+  try {
+    const user_id = req.user.user_id;
+    const history = await chatService.getChatHistory(user_id);
 
-    } catch (error) {
-        console.error('❌ CHAT CONTROLLER ERROR:', error);
-        res.status(500).json({ message: 'Error procesando el mensaje', error: error.message });
-    }
-};
+    res.json(history);
+  } catch (error) {
+    res.status(500).json({ message: 'Error obteniendo historial' });
+  }
+}
