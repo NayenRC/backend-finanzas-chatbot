@@ -2,7 +2,8 @@ import Dashboard from "../models/Dashboard.js";
 
 export const getDashboardResumen = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.user_id;
+
 
     const incomeSummary = await Dashboard.getIncomeSummary(userId);
     const expenseSummary = await Dashboard.getExpenseSummary(userId);
