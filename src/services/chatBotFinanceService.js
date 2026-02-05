@@ -183,7 +183,7 @@ ${statusEmoji} Te queda **${porcentajeDisponible}%** disponible ($${formatCLP(di
 const user = await chatDataService.getUserByTelegramId(userId);
 
 if (!user) {
-  return "⚠️ Debes vincular tu cuenta con SmartFin antes de crear metas.\n👉 Ve al Dashboard para vincularla.";
+  return "⚠️ Debes vincular tu cuenta con SmartFin antes de crear metas.👉 Ve al Dashboard para vincularla.";
 }
 await MetaAhorroService.crearMeta(user.id, {
   nombre: goalData.nombre,
