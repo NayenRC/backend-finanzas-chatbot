@@ -1,7 +1,5 @@
-import supabaseService from '../services/supabaseService.js';
+import supabase from '../services/supabaseService.js';
 import Usuario from '../models/Usuario.js';
-
-const { supabase } = supabaseService;
 
 export async function authenticateToken(req, res, next) {
   if (req.method === 'OPTIONS') {

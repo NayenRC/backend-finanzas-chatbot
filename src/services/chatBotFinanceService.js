@@ -69,7 +69,7 @@ async function processMessage(userId, userMessage) {
         break;
 
       case 'CONSULTAR':
-        response = await handleQuery(userMessage, formattedHistory);
+        response = await handleQuery(userId,userMessage, formattedHistory);
         break;
 
       default:
