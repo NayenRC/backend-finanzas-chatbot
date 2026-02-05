@@ -190,32 +190,32 @@ await MetaAhorroService.crearMeta(user.id, {
   monto_objetivo: goalData.monto_objetivo,
 });
 
-async function handleCreateSavingGoal(userId, message) {
+async function handleCreateSavingGoal(userTelegramId, message) {
   try {
+    // 1️⃣ Verificar vinculación
+    const user = await chatDataService.getUserByTelegramId(userTelegramId);
+
+    if (!user) {
+      return "🔗 Para crear metas debes vincular tu cuenta con SmartFin.\n👉 Ve al Dashboard y vincúlala primero.";
+    }
+
+    // 2️⃣ IA
     const goalData = await openRouterService.classifySavingGoal(message);
-    // 🔧 Fallback por si la IA no convierte bien
+
+    // 3️⃣ Fallback millones
     if (!goalData.monto_objetivo) {
       const match = message.toLowerCase().match(/(\d+)\s*(mill[oó]n|millones)/);
-
       if (match) {
         goalData.monto_objetivo = Number(match[1]) * 1_000_000;
       }
     }
+
     if (!goalData.nombre || !goalData.monto_objetivo) {
-      return (
-        goalData.sugerencia ||
-        "🎯 Dime el nombre y el monto de la meta.\nEjemplo: *Quiero ahorrar 2 millones para un auto*"
-      );
+      return "🎯 Dime el nombre y el monto.\nEjemplo: *Quiero ahorrar 2 millones para un auto*";
     }
 
-    if (goalData.error || !goalData.nombre || !goalData.monto_objetivo) {
-      return (
-        goalData.sugerencia ||
-        "🎯 Para crear una meta dime el nombre y el monto.\nEjemplo: *Quiero ahorrar 500 lucas para vacaciones*"
-      );
-    }
-
-    await MetaAhorroService.crearMeta(userId, {
+    // 4️⃣ Crear meta con user_id REAL
+    await MetaAhorroService.crearMeta(user.user_id, {
       nombre: goalData.nombre,
       monto_objetivo: goalData.monto_objetivo,
     });
@@ -223,15 +223,17 @@ async function handleCreateSavingGoal(userId, message) {
     return `🏆 **Meta creada con éxito**
 
 🎯 ${goalData.nombre}
-💰 Objetivo: $${Number(goalData.monto_objetivo).toLocaleString('es-CL')}
+💰 Objetivo: $${goalData.monto_objetivo.toLocaleString('es-CL')}
 
-👉 Puedes aportar diciendo algo como:
+👉 Puedes aportar diciendo:
 *Ahorra 50 lucas para ${goalData.nombre}*`;
+
   } catch (err) {
-    console.error("❌ Error creando meta:", err);
-    return "🔗 Para crear metas debes vincular tu cuenta con SmartFin.\n👉 Ingresa al Dashboard y vincúlala primero.";
+    console.error("❌ Error creando meta REAL:", err);
+    return "❌ Ocurrió un error al crear la meta. Intenta nuevamente 🙏";
   }
 }
+
 async function handleSavingMovement(userId, message) {
   try {
     // 1️⃣ Obtener metas del usuario
