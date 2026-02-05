@@ -2,7 +2,7 @@ import ConsejoFinanciero from '../models/ConsejoFinanciero.js';
 
 export const index = async (req, res) => {
   try {
-    const idToSearch = req.params.userId || (req.user ? (req.user.id || req.user.user_id) : null);
+    const idToSearch = req.params.userId || (req.user ? req.user.user_id : null);
 
     if (idToSearch) {
       const consejosUsuario = await ConsejoFinanciero.findByUser(idToSearch);
@@ -19,7 +19,7 @@ export const index = async (req, res) => {
 
 export const show = async (req, res) => {
   try {
-    const userId = req.user.id || req.user.user_id;
+    const userId =  req.user.user_id;
     const { id } = req.params;
     const consejo = await ConsejoFinanciero.findByIdAndUser(id, userId);
 
@@ -54,7 +54,7 @@ export const store = async (req, res) => {
 
 export const destroy = async (req, res) => {
   try {
-    const userId = req.user.id || req.user.user_id;
+    const userId =  req.user.user_id;
     const { id } = req.params;
     const deleted = await ConsejoFinanciero.deleteByUser(id, userId);
 

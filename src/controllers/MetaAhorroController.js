@@ -3,18 +3,19 @@ import MetaAhorroService from '../services/metaAhorroService.js';
 
 export const index = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.user_id;
 
     const metas = await MetaAhorro.findByUser(userId);
     res.json(metas);
   } catch (error) {
+    console.error("❌ Metas index error:", error);
     res.status(500).json({ error: error.message });
   }
 };
 
 export const show = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.user_id;
     const { id } = req.params;
 
     const meta = await MetaAhorro.findByIdAndUser(id, userId);
@@ -24,13 +25,14 @@ export const show = async (req, res) => {
 
     res.json(meta);
   } catch (error) {
+    console.error("❌ Metas show error:", error);
     res.status(500).json({ error: error.message });
   }
 };
 
 export const store = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.user_id;
     const meta = await MetaAhorroService.crearMeta(userId, req.body);
     res.status(201).json(meta);
   } catch (error) {
@@ -40,7 +42,7 @@ export const store = async (req, res) => {
 
 export const update = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.user_id;
     const { id } = req.params;
 
     const updated = await MetaAhorro.updateByUser(id, userId, req.body);
@@ -50,13 +52,14 @@ export const update = async (req, res) => {
 
     res.json(updated);
   } catch (error) {
+    console.error("❌ Metas update error:", error);
     res.status(500).json({ error: error.message });
   }
 };
 
 export const destroy = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user.user_id;
     const { id } = req.params;
 
     const deleted = await MetaAhorro.deleteByUser(id, userId);
@@ -66,16 +69,15 @@ export const destroy = async (req, res) => {
 
     res.json({ message: 'Meta eliminada correctamente' });
   } catch (error) {
+    console.error("❌ Metas destroy error:", error);
     res.status(500).json({ error: error.message });
   }
 };
 
-const MetaAhorroController = {
+export default {
   index,
   show,
   store,
   update,
   destroy,
 };
-
-export default MetaAhorroController;

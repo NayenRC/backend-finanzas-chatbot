@@ -3,7 +3,7 @@ import ChatMensaje from '../models/ChatMensaje.js';
 export const index = async (req, res) => {
   try {
     const { userId } = req.params;
-    const idToSearch = userId || (req.user ? (req.user.id || req.user.user_id) : null);
+    const idToSearch = userId || (req.user ? ( req.user.user_id) : null);
 
     if (idToSearch) {
       const mensajesUsuario = await ChatMensaje.findByUser(idToSearch);
@@ -20,7 +20,7 @@ export const index = async (req, res) => {
 
 export const show = async (req, res) => {
   try {
-    const userId = req.user.id || req.user.user_id;
+    const userId = req.user.user_id;
     const { id } = req.params;
     const mensaje = await ChatMensaje.findByIdAndUser(id, userId);
 
@@ -40,8 +40,8 @@ export const store = async (req, res) => {
     const data = req.body;
 
     // 1. Asignar ID desde el token (si existe)
-    if (req.user && (req.user.id || req.user.user_id)) {
-      data.user_id = req.user.id || req.user.user_id;
+    if (req.user && req.user.user_id) {
+      data.user_id = req.user.user_id;
     }
 
     // 2. Definir que NO es un mensaje del bot (es del usuario)
@@ -62,7 +62,7 @@ export const store = async (req, res) => {
 
 export const destroy = async (req, res) => {
   try {
-    const userId = req.user.id || req.user.user_id;
+    const userId =  req.user.user_id;
     const { id } = req.params;
     const deleted = await ChatMensaje.deleteByUser(id, userId);
 

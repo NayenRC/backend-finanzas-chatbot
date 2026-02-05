@@ -75,7 +75,7 @@ const login = async (req, res) => {
 const chat = async (req, res) => {
   try {
     // El usuario viene del middleware de auth (req.user)
-    const user_id = req.user.id || req.user.user_id; // ✅ CORREGIDO: Leemos 'id' o 'user_id'
+    const user_id =  req.user.user_id; // ✅ CORREGIDO: Leemos 'id' o 'user_id'
     const { mensaje } = req.body;
 
     if (!mensaje) {
@@ -99,7 +99,7 @@ const chat = async (req, res) => {
  */
 const getBalance = async (req, res) => {
   try {
-    const user_id = req.user.id || req.user.user_id; // ✅ CORREGIDO: Leemos 'id' o 'user_id'
+    const user_id =  req.user.user_id; // ✅ CORREGIDO: Leemos 'id' o 'user_id'
 
     console.log(' GET BALANCE - User ID:', user_id);
 
@@ -158,7 +158,7 @@ const getBalance = async (req, res) => {
  */
 const registerExpense = async (req, res) => {
   try {
-    const user_id = req.user.id || req.user.user_id;
+    const user_id = req.user.user_id;
     const { monto, descripcion, fecha } = req.body;
 
     console.log('📝 Telegram: Registrando Gasto para:', user_id);
@@ -186,7 +186,7 @@ const registerExpense = async (req, res) => {
  */
 const registerIncome = async (req, res) => {
   try {
-    const user_id = req.user.id || req.user.user_id;
+    const user_id = req.user.user_id;
     const { monto, descripcion, fecha } = req.body;
 
     console.log('📝 Telegram: Registrando Ingreso para:', user_id);

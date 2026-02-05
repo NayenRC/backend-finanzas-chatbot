@@ -34,7 +34,7 @@ export const show = async (req, res) => {
 
 export const store = async (req, res) => {
   try {
-    const userId = req.user.id || req.user.user_id;
+    const userId =  req.user.user_id;
     const { meta_id, monto, fecha } = req.body;
 
     const result = await MetaAhorroService.agregarMovimiento(
