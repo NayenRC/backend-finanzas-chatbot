@@ -182,6 +182,20 @@ ${statusEmoji} Te queda **${porcentajeDisponible}%** disponible ($${formatCLP(di
 async function handleCreateSavingGoal(userId, message) {
   try {
     const goalData = await openRouterService.classifySavingGoal(message);
+    // 🔧 Fallback por si la IA no convierte bien
+    if (!goalData.monto_objetivo) {
+      const match = message.toLowerCase().match(/(\d+)\s*(mill[oó]n|millones)/);
+
+      if (match) {
+        goalData.monto_objetivo = Number(match[1]) * 1_000_000;
+      }
+    }
+    if (!goalData.nombre || !goalData.monto_objetivo) {
+      return (
+        goalData.sugerencia ||
+        "🎯 Dime el nombre y el monto de la meta.\nEjemplo: *Quiero ahorrar 2 millones para un auto*"
+      );
+    }
 
     if (goalData.error || !goalData.nombre || !goalData.monto_objetivo) {
       return (

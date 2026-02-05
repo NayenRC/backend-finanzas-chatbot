@@ -239,10 +239,13 @@ Extrae información para crear una META DE AHORRO.
 Si el mensaje contiene palabras como:
 "ahorrar", "meta", "juntar", "guardar", "objetivo"
 la intención DEBE ser CREAR_META_AHORRO.
-
-Convierte expresiones chilenas:
+Convierte expresiones chilenas de dinero:
 - "500 lucas" → 500000
 - "1 palo" → 1000000
+- "2 millones" → 2000000
+- "3 millones" → 3000000
+- "un millón" → 1000000
+- "dos millones" → 2000000
 
 Devuelve SOLO JSON:
 {
