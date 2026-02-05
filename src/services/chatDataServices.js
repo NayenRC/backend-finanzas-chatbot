@@ -149,6 +149,22 @@ async function getExpensesByCategory(userId, range) {
 
   return await query;
 }
+/**
+ * Obtener usuario por telegram_id
+ */
+async function getUserByTelegramId(telegramId) {
+  try {
+    const user = await db('users')
+      .where('telegram_id', telegramId)
+      .first();
+
+    return user || null;
+  } catch (error) {
+    console.error('❌ Error obteniendo usuario por telegram:', error);
+    return null;
+  }
+}
+
 
 /* ==================================================
    EXPORT
@@ -164,4 +180,5 @@ export default {
   getIncomes,
   getExpenses,
   getExpensesByCategory,
+  getUserByTelegramId, 
 };

@@ -190,15 +190,17 @@ async function handleCreateSavingGoal(userTelegramId, message) {
     const goalData = await openRouterService.classifySavingGoal(message);
 
     if (!goalData.monto_objetivo) {
-      const match = message.toLowerCase().match(/(\d+)\s*(mill[oó]n|millones)/);
-      if (match) goalData.monto_objetivo = Number(match[1]) * 1_000_000;
+      const match = message.match(/(\d+[.,]?\d*)/);
+      if (match) {
+        goalData.monto_objetivo = Number(match[1].replace('.', '').replace(',', ''));
+      }
     }
 
     if (!goalData.nombre || !goalData.monto_objetivo) {
-      return "🎯 Dime el nombre y el monto.\nEjemplo: *Quiero ahorrar 2 millones para un auto*";
+      return "🎯 Dime el nombre y el monto.\nEjemplo: *Quiero ahorrar 500 lucas para un auto*";
     }
 
-    await MetaAhorroService.crearMeta(user.user_id, {
+    await MetaAhorroService.crearMeta(user.id, {
       nombre: goalData.nombre,
       monto_objetivo: goalData.monto_objetivo,
     });
@@ -206,11 +208,13 @@ async function handleCreateSavingGoal(userTelegramId, message) {
     return `🏆 **Meta creada con éxito**
 🎯 ${goalData.nombre}
 💰 Objetivo: $${goalData.monto_objetivo.toLocaleString('es-CL')}`;
+
   } catch (err) {
-    console.error(err);
+    console.error("❌ Error creando meta:", err);
     return "❌ Ocurrió un error al crear la meta 😕";
   }
 }
+
 
 
 async function handleSavingMovement(userId, message) {
