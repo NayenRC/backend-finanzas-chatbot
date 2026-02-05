@@ -4,6 +4,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import router from './routes/index.js';
 import { startTelegramBot } from './bot/startTelegramBot.js';
+import chatRoutes from './routes/chatRoutes.js';
 
 const app = express();
 
