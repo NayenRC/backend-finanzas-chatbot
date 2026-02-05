@@ -3,7 +3,8 @@ import chatBotFinanceService from '../services/chatBotFinanceService.js';
 import Usuario from '../models/Usuario.js';
 import Gasto from '../models/Gasto.js';
 import Ingreso from '../models/Ingreso.js';
-import ChatMensaje from '../models/ChatMensaje.js';
+import ChatMensaje from '../models/ChatMensaje.js'; // opcional si ya no se usa
+import db from '../config/db.js'; // 🔑 ESTA LÍNEA
 import { transaction } from 'objection';
 
 let botInstance = null;
