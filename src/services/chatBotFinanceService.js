@@ -1,5 +1,7 @@
 import openRouterService from './openRouterService.js';
 import chatDataService from './chatDataServices.js';
+import MetaAhorroService from "./metaAhorroService.js";
+
 
 /**
  * ==================================================
@@ -79,6 +81,15 @@ async function processMessage(userId, userMessage) {
           userMessage,
           formattedHistory
         );
+      case 'CREAR_META':
+      case 'CREAR_META_AHORRO':
+        response = await handleCreateSavingGoal(userId, userMessage);
+        break;
+
+      case 'AGREGAR_A_META':
+        response = await handleSavingMovement(userId, userMessage);
+        break;
+
     }
 
     /* ===============================
@@ -164,6 +175,85 @@ ${statusEmoji} Te queda **${porcentajeDisponible}%** disponible ($${formatCLP(di
     return '';
   }
 }
+
+async function handleCreateSavingGoal(userId, message) {
+  try {
+    const goalData = await openRouterService.classifySavingGoal(message);
+
+    if (goalData.error || !goalData.nombre || !goalData.monto_objetivo) {
+      return (
+        goalData.sugerencia ||
+        "🎯 Para crear una meta dime el nombre y el monto.\nEjemplo: *Quiero ahorrar 500 lucas para vacaciones*"
+      );
+    }
+
+    await MetaAhorroService.crearMeta(userId, {
+      nombre: goalData.nombre,
+      monto_objetivo: goalData.monto_objetivo,
+    });
+
+    return `🏆 **Meta creada con éxito**
+
+🎯 ${goalData.nombre}
+💰 Objetivo: $${Number(goalData.monto_objetivo).toLocaleString('es-CL')}
+
+👉 Puedes aportar diciendo algo como:
+*Ahorra 50 lucas para ${goalData.nombre}*`;
+  } catch (err) {
+    console.error("❌ Error creando meta:", err);
+    return "❌ No pude crear la meta en este momento 😕";
+  }
+}
+async function handleSavingMovement(userId, message) {
+  try {
+    // 1️⃣ Obtener metas del usuario
+    const metas = await MetaAhorro.getByUser(userId);
+
+    if (!metas.length) {
+      return "⚠️ Aún no tienes metas creadas. Dime primero qué meta quieres crear 🎯";
+    }
+
+    // 2️⃣ IA identifica meta + monto
+    const movement = await openRouterService.classifySavingMovement(
+      message,
+      metas
+    );
+
+    if (movement.error || !movement.meta || !movement.monto) {
+      return (
+        movement.sugerencia ||
+        "💰 Dime cuánto quieres ahorrar y para qué meta.\nEjemplo: *Ahorra 20 lucas para el viaje*"
+      );
+    }
+
+    const meta = metas.find(m =>
+      m.nombre.toLowerCase().includes(movement.meta.toLowerCase())
+    );
+
+    if (!meta) {
+      return `❌ No encontré la meta "${movement.meta}"`;
+    }
+
+    const result = await MetaAhorroService.agregarMovimiento(
+      meta.id_meta,
+      userId,
+      movement.monto,
+      new Date()
+    );
+
+    return `💸 **Ahorro registrado**
+
+🎯 Meta: ${meta.nombre}
+💰 Aporte: $${movement.monto.toLocaleString('es-CL')}
+📊 Progreso: $${result.progreso.actual.toLocaleString('es-CL')} / $${result.progreso.objetivo.toLocaleString('es-CL')}
+
+${result.progreso.completada ? '🎉 ¡Meta completada!' : '¡Sigue así! 💪'}`;
+  } catch (err) {
+    console.error("❌ Error movimiento ahorro:", err);
+    return "❌ No pude registrar el ahorro 😕";
+  }
+}
+
 
 /**
  * Registrar gasto
