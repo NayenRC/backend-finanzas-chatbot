@@ -114,17 +114,23 @@ export function startTelegramBot() {
             .count('id_ingreso as cnt')
             .where('user_id', duplicateUsuario.user_id)
             .first();
-          const chatsCntRow = await ChatMensaje.query()
+          const chatsCntRow = await db('chat_mensaje')
             .count('id_chat as cnt')
             .where('user_id', duplicateUsuario.user_id)
             .first();
 
+          const chatsCnt = Number(chatsCntRow?.cnt || 0);
+
 
           const gastosCnt = Number(gastosCntRow?.cnt || 0);
           const ingresosCnt = Number(ingresosCntRow?.cnt || 0);
-          const chatsCnt = Number(chatsCntRow?.cnt || 0);
+          // Migrar datos dentro de una transacción
 
           try {
+            await db('chat_mensaje')
+              .where('user_id', duplicateUsuario.user_id)
+              .update({ user_id: usuarioWeb.user_id });
+
             await transaction(Usuario.knex(), async (trx) => {
               if (gastosCnt > 0) {
                 await Gasto.query(trx)

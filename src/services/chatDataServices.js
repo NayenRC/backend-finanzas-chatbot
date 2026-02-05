@@ -12,21 +12,18 @@ import Categoria from '../models/Categoria.js';
 /**
  * Obtener historial de chat del usuario
  */
-async function getChatHistory(userId, limit = 10) {
+async function saveChatMessage(userId, rol, mensaje) {
   try {
-    const history = await ChatMensaje.query()
-      .where('user_id', userId)
-      .orderBy('creado_en', 'desc')
-      .limit(limit);
-
-    // Importante: la IA necesita orden cronológico
-    return history.reverse();
+    await db('chat_mensaje').insert({
+      user_id: userId,
+      rol,
+      mensaje,
+      creado_en: new Date(),
+    });
   } catch (error) {
-    console.error('❌ Error fetching chat history:', error);
-    return [];
+    console.error('❌ Error saving chat message:', error);
   }
 }
-
 /**
  * Guardar mensaje de chat (user o assistant)
  */
